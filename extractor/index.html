@@ -28,6 +28,9 @@
 <script type="module">
 import { identify } from './adf.js';
 import { extractMusic } from './music.js';
+import { extractTiles } from './tiles.js';
+import { extractMaps } from './levels.js';
+import { extractLevels } from './tables.js';
 
 const CACHE = 'tnt-assets-v1';
 const log = s => { document.getElementById('log').textContent += s + '\n'; };
@@ -47,9 +50,8 @@ export async function extractAll(files) {
     if (d) disks[d.id] = adf;
   }
   const out = [], t0 = performance.now();
-  // tiles.js and levels.js already match the exported files (extract.test.mjs), but they are stored only together with
-  // the level tables (level{n}.json, still to do): a disk map with the demo pack's tile attributes would not be playable
-  for (const [name, run] of [['music', extractMusic]]) {
+  // tiles, maps and level tables only work together (tile numbers, attributes, areas): one module fails, none is stored
+  for (const [name, run] of [['music', extractMusic], ['stages', d => d[1] && d[2] ? [extractTiles, extractMaps, extractLevels].flatMap(f => f(d)) : []]]) {
     try { const r = run(disks); out.push(...r); log(`${name}: ${r.length} files`); }
     catch (e) { log(`${name}: ${e.message}`); }
   }

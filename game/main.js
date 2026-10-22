@@ -70,9 +70,9 @@ async function load(name) {
   const GUARD = {'2f2e36': 0x2f2e38, '2f2f4e': 0x2f2f50};
   for (const o of objs.objects) if (GUARD[o.type]) { o.actor = 1; actors.actors.push({x: o.x, y: o.y, type: o.type, script: GUARD[o.type], sect: o.sect}); }
   Actors.load(actors);
-  // kafle skrzyn, kruchych kamieni i scian do wysadzenia gra naklada na mape z dysku (LEV!) przy starcie etapu - mapa
-  // z ekstraktora ich nie ma, eksport ze zrzutu juz tak (wtedy bez zmian)
-  for (const k of ['crates', 'brittle', 'bombwalls']) for (const e of (meta[k] && meta[k].list) || []) map[e.idx] = meta[k].tile;
+  // kafle skrzyn, scian do wysadzenia i kruchych kamieni (w tej kolejnosci) gra naklada na mape z dysku (LEV!) przy
+  // starcie etapu - mapa z ekstraktora ich nie ma, eksport ze zrzutu juz tak (wtedy bez zmian)
+  for (const k of ['crates', 'bombwalls', 'brittle']) for (const e of (meta[k] && meta[k].list) || []) map[e.idx] = meta[k].tile;
   const rain = (actors.triggers || []).filter(t => t.kind === 'rain');
   return {...meta, rain, map, surface, water, hudTop, hudBottom, hudTopVit, shopBg, shopKeeper, mapMarker, toolIcons, msgBox, msgFont, msgFontMap, hofLogo, storyText, storyTextPl, storyBg, introStarbyte, introNightingale, treasureImg, treasureMap, endingBg, endingDark, endingSky, ending, menuImg, menuIcons, passIcons, menu, islandClean, mapAtlas, mapActors, shotsImg, gameoverImg, weapons, compassImg, compass, digits, lifeEmpty, font, fontMap, fontExt, fontExtMap, objs, shopAtlas, shopFrames, titleImg, islandImg, titleWide,
     actors: {surface: asurf, water: awater, banks: actors.banks}, sword: {surface: swS, water: swW}, player: {...pmeta, surface: psurf, water: pwater}};

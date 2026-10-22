@@ -1443,3 +1443,14 @@ zgoda prawowitych właścicieli.
   (nie w aplikacji Capacitor ani z file://). Sprawdzone w przegladarce: 23 pliki, mapa etapu 1 w grze = referencja. Na
   razie strona zapisuje tylko muzyke - kafle i mapy dopiero razem z tabelami etapu (level{n}.json), bo z atrybutami kafli
   pakietu demo etap z dysku nie bylby grywalny.
+- Ekstraktor, tabele etapow (`extractor/tables.js`, `seg2.js`): syntetyczna pamiec etapu w ukladzie A - glowny program
+  SEG2 z dysku 1 relokowany (seg1 -> $2DC97C, seg2 -> $9A4C, BSS $100FC), hunk obszarow etapu z dysku 2 ($21AA4,
+  $3C314, $56DB0, $72500: jeden HUNK_DATA czytany bez relokacji, +0 x/y startu, +4 obszar startowy) pod $9014 (etap 1)
+  / $52024 (2-4), zmienne $30CD14 (tablica etapu z listy $30B70E, 8 B na etap: x, y wyspy, tablica), $30CD98,
+  $30CBA2, $30CAA2 (szerokosc mapy). Odczyty jak w `work/export_level.py`: wszystkie 28 pol level{n}.json zgodne w 4
+  etapach. `under` skrzyn, scian i kamieni gra bierze z mapy przy nakladaniu - kolejnosc skrzynie, sciany do
+  wysadzenia, kruche kamienie (kamien na skrzyni ma under = kafel skrzyni); silnik naklada teraz w tej kolejnosci.
+  Szerokosc/wysokosc mapy z naglowka LEV! (+10/+12 kafle ekranu 20x12, +14/+16 liczba ekranow). Niebo: tablica etapu
+  +$54 = kolor na 4 linie, rysowany [k, poprzedni, k, k]; okno linii, linia wody, 2 kolory lustra i tlo pod woda $003
+  to stale pomiarowe (RECIPE). Strona zapisuje etapy (kafle, mapy, tabele) tylko z obiema dyskietkami; 4 oryginalne
+  etapy z grafika pakietu demo przechodza test 4000 klatek losowych klawiszy.

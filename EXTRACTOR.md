@@ -5,13 +5,25 @@ their own ADF disks in a form and every asset is extracted in the browser.
 
 ## Status (2026-10-22)
 
-Done in `extractor/`: disk identification (`adf.js`), music (11 MED modules, byte-exact), tile banks (`CHR!` with the
-water palette rule, 8 atlases, pixel-exact) and level maps (`LEV!`, the engine lays the crate / brittle stone / bomb wall
-tiles from the level JSON lists, as the game does from its tables). `node extractor/extract.test.mjs` checks all of
-them against your own exported `game/assets/`. The page stores the music in Cache Storage and `game/sw.js` serves it to
-the game in place of the demo pack. Tiles and maps are stored only once the level tables (`level{n}.json`) can be
-extracted too: a disk map with the demo pack's tile attributes is not playable. Still to do: level tables, objects,
-enemies, the player, fonts, HUD, screens, sound effects.
+Done in `extractor/`, each checked against your own exported `game/assets/` by `node extractor/extract.test.mjs`:
+
+- disk identification (`adf.js`);
+- music: 11 MED modules, byte-exact (`music.js`);
+- tile banks: `CHR!` with the water palette rule, 8 atlases, pixel-exact (`tiles.js`);
+- level maps: `LEV!`, map size from its header (screens of 20 x 12 tiles); the engine lays the crate, bomb wall and
+  brittle stone tiles from the level JSON lists, in the game's order (`levels.js`);
+- level tables `level{n}.json`, all 28 fields equal (`tables.js`): the main program relocated by `seg2.js`, the stage's
+  area hunk (disk 2 `$21AA4`, `$3C314`, `$56DB0`, `$72500`: one HUNK_DATA read unrelocated, start x/y and start area at
+  +0/+2/+4) at its layout-A chip address (`$9014` for stage 1, `$52024` for 2-4), the level table from the per-stage
+  list at `$30B70E` (8 bytes a stage: island x, y, table). The tile under a crate, bomb wall or stone is taken from the
+  map while laying them (crates, then bomb walls, then stones). Sky: the level table +`$54` points to one colour per
+  4 lines, drawn `[k, previous, k, k]`; the window of lines the engine uses, the water line, the 2 mirror colours and
+  the water background (`$003`) are measured constants in `RECIPE`.
+
+The page stores the music and, when both disks are given, the stages (tiles, maps, tables) in Cache Storage;
+`game/sw.js` serves them to the game in place of the demo pack (tested: the 4 original stages with the demo pack's
+graphics pass the 4000-frame random-input test). Still to do: objects, enemies, the player, fonts, HUD, screens, sound
+effects.
 
 ## Verdict
 

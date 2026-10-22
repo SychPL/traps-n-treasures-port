@@ -7,6 +7,7 @@ import { inflateSync } from 'node:zlib';
 import { extractMusic } from './music.js';
 import { extractTiles } from './tiles.js';
 import { extractMaps } from './levels.js';
+import { extractLevels } from './tables.js';
 
 const adf = n => new Uint8Array(readFileSync(`Traps-n-Treasures_Amiga_EN/Traps 'n Treasures (1993)(Starbyte)(En)[cr PSG](Disk ${n} of 2).adf`));
 const disks = {1: adf(1), 2: adf(2)};
@@ -39,6 +40,9 @@ function decodePNG(buf) {
   return {w, h, px};
 }
 
+// JSON with sorted object keys (the exporters and the extractor write the fields in different orders)
+const canon = v => JSON.stringify(v, (k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort()) : x);
+
 let bad = 0;
 function check(files) {
   for (const {path, data} of files) {
@@ -56,7 +60,8 @@ function check(files) {
         }
       ok = a.w === b.w && a.h === b.h && !diff;
       note = `${a.w}x${a.h} vs ${b.w}x${b.h}, ${diff} pixels differ`;
-    } else ok = data.length === ref.length && data.every((v, i) => v === ref[i]);
+    } else if (path.endsWith('.json')) ok = canon(JSON.parse(new TextDecoder().decode(data))) === canon(JSON.parse(new TextDecoder().decode(ref)));
+    else ok = data.length === ref.length && data.every((v, i) => v === ref[i]);
     if (!ok) bad++;
     console.log(`${ok ? 'ok' : 'XX'} ${path} ${note}`);
   }
@@ -66,7 +71,8 @@ check(extractTiles(disks));
 // maps: the engine lays the overlay tiles from the level JSON lists (as the game does from its tables)
 check(extractMaps(disks).map(({path, data}) => {
   const meta = JSON.parse(readFileSync(`game/assets/${path.replace('.bin', '.json')}`)), m = data.slice();
-  for (const k of ['crates', 'brittle', 'bombwalls']) for (const e of meta[k]?.list || []) m[e.idx] = meta[k].tile;
+  for (const k of ['crates', 'bombwalls', 'brittle']) for (const e of meta[k]?.list || []) m[e.idx] = meta[k].tile;
   return {path, data: m};
 }));
+check(extractLevels(disks));
 if (bad) { console.log(`${bad} mismatches`); process.exit(1); }
