@@ -1,0 +1,89 @@
+diff --git a/game/main.js b/game/main.js
+index a32d8da..db86abd 100644
+--- a/game/main.js
++++ b/game/main.js
+@@ -5,6 +5,17 @@
+ const W = 320, H = 159, PFY = 12, SH = 211, TS = 16, STEP = 1000 / 50, Q = 4;
+ const cv = document.getElementById('c'), cx = cv.getContext('2d');
+ const info = document.getElementById('info');
++// canvas zawsze 640x422 (R = 2); kod rysuje w jednostkach logicznych 320x211 (setTransform w petli klatki).
++// Obraz ma skale zrodla .s (oryginal 1, HD 2): prostokat zrodla w drawImage jest logiczny, tu mnozony przez .s;
++// drawImage(obraz, x, y) rysuje w rozmiarze logicznym. Dziala tez dla Actors.draw (dostaje ten sam cx).
++const R = 2;
++cv.width = W * R; cv.height = SH * R; cx.imageSmoothingEnabled = false;
++const blit = cx.drawImage.bind(cx);
++cx.drawImage = (im, a, b, c, d, ...dst) => {
++  const s = im.s || 1;
++  if (dst.length) return blit(im, a * s, b * s, c * s, d * s, ...dst);
++  return c === undefined ? blit(im, a, b, im.width / s, im.height / s) : blit(im, a, b, c, d);
++};
+ 
+ function fit() {
+   const s = Math.max(1, Math.floor(Math.min(innerWidth / W, (innerHeight - 40) / SH)));
+@@ -12,7 +23,9 @@ function fit() {
+ }
+ addEventListener('resize', fit); fit();
+ 
+-const img = src => new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = src; });
++const img = src => new Promise((ok, err) => {
++  const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = src; i.file = src.split('/').pop();
++});
+ const json = src => fetch(src).then(r => r.json());
+ 
+ async function load(name) {
+@@ -82,7 +95,7 @@ const tinted = {};
+ function tint(src, color) {
+   const key = src.src + color;
+   if (!tinted[key]) {
+-    const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
++    const c = document.createElement('canvas'); c.width = src.width; c.height = src.height; c.s = src.s;
+     const g = c.getContext('2d'); g.drawImage(src, 0, 0); g.globalCompositeOperation = 'source-in';
+     g.fillStyle = color; g.fillRect(0, 0, c.width, c.height); tinted[key] = c;
+   }
+@@ -114,6 +127,29 @@ async function initLang() {
+ }
+ addEventListener('keydown', e => { if (e.code === 'KeyL') setLang(langs[(langs.indexOf(langCode) + 1) % langs.length]); });
+ 
++// --- grafika: assets/ (oryginal) albo assets/hd/ (te same nazwy plikow, 2x); wybor: ?gfx=hd|org, localStorage, klawisz G.
++// W locie, bez przeladowania: podmiana obrazow w L, logika i wspolrzedne bez zmian. Brak pliku HD -> oryginal.
++let gfx = new URLSearchParams(location.search).get('gfx');
++try { gfx = gfx || localStorage.getItem('tnt.gfx'); } catch (e) {}
++gfx = gfx === 'hd' ? 'hd' : 'org';
++const gfxCache = {org: {}, hd: {}};
++const pics = () => [[L, 'surface'], [L, 'water'], [L, 'hudTop'], [L, 'hudBottom'], [L, 'digits'], [L, 'lifeEmpty'], [L, 'font'],
++  [L, 'fontExt'], [L.objs, 'surface'], [L.objs, 'water'], [L.actors, 'surface'], [L.actors, 'water'], [L.sword, 'surface'],
++  [L.sword, 'water'], [L.player, 'surface'], [L.player, 'water']];
++async function setGfx(name) {
++  gfx = name;
++  const list = pics();
++  for (const [o, k] of list) gfxCache.org[o[k].file] ??= o[k];
++  const got = await Promise.all(list.map(([o, k]) => {
++    const f = o[k].file, org = gfxCache.org[f];
++    return name === 'org' ? org : gfxCache.hd[f] ??= img('assets/hd/' + f).then(i => (i.s = i.width / org.width, i), () => org);
++  }));
++  if (gfx !== name) return;                            // w miedzyczasie przelaczono z powrotem
++  list.forEach(([o, k], i) => { o[k] = got[i]; });
++  try { localStorage.setItem('tnt.gfx', name); } catch (e) {}
++}
++addEventListener('keydown', e => { if (e.code === 'KeyG' && L && game.state !== 'loading') setGfx(gfx === 'hd' ? 'org' : 'hd'); });
++
+ // --- wyjscie z poziomu: drzwi (kafel z atrybutem $0010) w skalnej czaszce na koncu mapy + UP ---
+ const DOOR = 0x10;
+ function exitCheck(UP) {
+@@ -359,7 +395,7 @@ const LEVEL_COUNT = 2;
+ let levelNo = Math.min(LEVEL_COUNT, Math.max(1, +new URLSearchParams(location.search).get('level') || 1));
+ async function startLevel(n) {
+   game.state = 'loading';
+-  levelNo = n; L = await load('level' + n);
++  levelNo = n; L = await load('level' + n); await setGfx(gfx);
+   Actors.player = pl; Actors.spawn(); respawn();
+   game.state = null;
+ }
+@@ -372,6 +408,7 @@ Promise.all([startLevel(levelNo), initLang()]).then(() => {
+       else if (!game.state) { update(); follow(); }
+       acc -= STEP;
+     }
++    cx.setTransform(R, 0, 0, R, 0, 0);
+     if (game.state === 'clear') clearScreen(); else if (!game.state) draw();
+     info.textContent = `${LANG._name} - ${levelNo}: ${(tr('level')[levelNo - 1] || '')} - x ${pl.x} y ${pl.y} - ${tr('controls')}`;
+     requestAnimationFrame(frame);

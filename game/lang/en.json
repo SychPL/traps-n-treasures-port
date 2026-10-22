@@ -1,0 +1,268 @@
+{
+  "_name": "English",
+  "controls": "arrows/WASD: move, up/space: jump, Ctrl/X: sword (in a jump: down strike), at a door, prisoner, lever or sign: up, then Ctrl/X, down: crouch (with left/right: crawl), crate: push and hold Ctrl/X to carry, in a jump down then up: parachute, T: use tool, Tab: next tool, Esc: pause, O: options, P: photo mode, L: language, M: music",
+  "level": [
+    "THE THREADNEEDLE-LAGOON",
+    "THE SKULL-GROTTO",
+    "THE TEMPLE",
+    "THE FORTRESS"
+  ],
+  "made_it": "YOU'VE MADE IT!!!",
+  "score": "SCORE",
+  "gold": "GOLD",
+  "press_button": "- PRESS BUTTON -",
+  "get_ready": "GET READY, FLYNN",
+  "congratulations": "CONGRATULATIONS !",
+  "map_complete": "TREASURE MAP COMPLETE !",
+  "rating": [
+    "NO COMMENT...",
+    "NICE ATTEMPT...",
+    "NOT BAD!",
+    "WELL DONE!",
+    "VERY GOOD!",
+    "EXCELLENT !!!"
+  ],
+  "collected_diamonds": "COLLECTED DIAMONDS  :",
+  "missed_diamonds": "MISSED DIAMONDS     :",
+  "complete": "COMPLETE            :",
+  "bonus_none": "BONUS : NONE",
+  "remaining_time": "REMAINING TIME",
+  "collected_fruits": "COLLECTED FRUITS",
+  "remaining_maps": "REMAINING MAPS",
+  "password": "PASSWORD FOR THE NEXT STAGE:",
+  "shop": {
+    "welcome": [
+      "",
+      "",
+      "   WELCOME",
+      "",
+      "     STRANGER"
+    ],
+    "game": [
+      "WHAT ABOUT",
+      "A LITTLE GAME?",
+      "",
+      "MAKE YOUR CHOICE",
+      "",
+      "  EVEN      ODD"
+    ],
+    "bye": [
+      "",
+      "",
+      "  SEE YOU SOON",
+      "",
+      "     STRANGER"
+    ],
+    "items": {
+      "fruits": [
+        "FRUITS",
+        "SOME VITAMINES",
+        "AS REFRESHMENT?"
+      ],
+      "soup": [
+        "SOUP",
+        "AFTER THIS YOU",
+        "FEEL A BIT",
+        "BETTER AT ONCE"
+      ],
+      "stew": [
+        "STEW",
+        "SMELLS NICE",
+        "DOESNT IT? ITS",
+        "VERY SUBSTANTIAL",
+        "BY THE WAY"
+      ],
+      "sword": [
+        "SWORD",
+        "STABBING WEAPON",
+        "WITH STRENGTH 1"
+      ],
+      "magnifier": [
+        "MAGNIFIER",
+        "TO SCRUTINIZE",
+        "SUSPICIOUS",
+        "MECHANISMS"
+      ],
+      "map": [
+        "MAP",
+        "GIVES YOU A VIEW",
+        "OF THE CLOSER",
+        "ENVIRONMENT"
+      ],
+      "pharmacy": [
+        "PHARMACY",
+        "WITH THE",
+        "SECRET POTION",
+        "YOU FEEL",
+        "STRONGER AT ONCE"
+      ],
+      "morning_star": [
+        "MORNING STAR",
+        "BEATING WEAPON",
+        "WITH STRENGTH 3"
+      ],
+      "bombs": [
+        "BOMBS",
+        "WITH MY",
+        "POWDER MIXTURE",
+        "WALLS ARENT AN",
+        "OBSTACLE ANYMORE"
+      ],
+      "dice": [
+        "DICE",
+        "WIN YOUR STAKE",
+        "IN ADDITION",
+        "OR LOSE IT"
+      ],
+      "crooked_sword": [
+        "CROOKED SWORD",
+        "BEATING WEAPON",
+        "WITH STRENGTH 3"
+      ],
+      "iron_balls": [
+        "IRON BALLS",
+        "AMMUNITION",
+        "WITH STRENGTH 2"
+      ],
+      "special_balls": [
+        "SPECIAL BALLS",
+        "AMMUNITION",
+        "WITH STRENGTH 1"
+      ],
+      "fireball": [
+        "FIREBALL",
+        "AMMUNITION",
+        "WITH STRENGTH 10"
+      ]
+    },
+    "won": [
+      "",
+      "",
+      "",
+      "     YOU WON"
+    ],
+    "lost": [
+      "",
+      "",
+      "",
+      "     YOU LOST"
+    ]
+  },
+  "msg": {
+    "door_other_side": "The door cannot be opened from this side.",
+    "nothing_unusual": "Here is nothing unusual to be found.",
+    "nasty_trap": "After having a closer look, this seems to be a nasty trap.",
+    "nothing_scrutinize": "Here is nothing to scrutinize.",
+    "already_used": "Hello... it's already been used!",
+    "men_free": "I've made it! All my men are free!^It's getting pretty critical now, because Philip Shave, called the Chopper,^left his place in order to catch me!!!^To the exit now, quick!!",
+    "logbook": "Logbook of:",
+    "too_dark": "It's too dark in there. You need a lamp.",
+    "lamp_lit": "You light the lamp.",
+    "captain": "Captain Jeremy Flynn"
+  },
+  "intro": [
+    [
+      "THE ROUGH SEA MAKES YOUR BOAT ROCK",
+      "HEAVILY.",
+      "",
+      "FOR A WHILE YOU MANAGE TO FIGHT AGAINST",
+      "THE ROARING WAVES BUT SUDDENLY",
+      "A BREAKER CRASHES YOU",
+      "AGAINST THE ROCK IN FRONT OF YOU.",
+      "",
+      "NOW YOU CANNOT BUT SWIM,",
+      "TO THE ISLAND."
+    ],
+    [
+      "IT IS LATE AFTERNOON. A FRESH",
+      "BREEZEE IS BLOWING FROM THE EAST ACROSS",
+      "THE DEVIL'S ISLAND.",
+      "YOU ARE WALKING ALONG THE STONY COAST",
+      "TOWARDS THE CENTRE OF THE ISLAND.",
+      "FURTHER AHEAD YOU MAKE OUT A HALF-",
+      "ROTTEN BRIDGE AND AT ITS END",
+      "A ROCK WHICH RESEMBLES A HUGE",
+      "SKULL. A CREEPY SILENCE IS SPREADING",
+      "AND THE AIR IS SMELLING FOUL."
+    ],
+    [
+      "AFTER FINDING YOUR WAY THROUGH THE",
+      "ALMOST IMPENETRABLE THICKET",
+      "YOU FIND YOURSELF STANDING IN FRONT OF",
+      "A HALF-ROTTEN TEMPLE-LIKE BUILDING.",
+      "",
+      "YOU ASCEND THE LONG FLIGHT OF STONE",
+      "STAIRS AND FIND THE ENTRY HIDDEN",
+      "BEHIND CREEPERS..."
+    ],
+    [
+      "STEEP ROCKS ARE TOWERING UP IN FRONT OF",
+      "YOU. COUNTLESS PEOPLE MUST HAVE DIED",
+      "WHEN THEY TRIED TO CLAIM UP THE ROCKS.",
+      "IT HAS GROWN VERY COLD NOW AND DARK",
+      "CLOUDS ARE DRAWING UP FROM THE EAST.",
+      "VERY DETERMINED YOU START CLAIMING UP",
+      "THE WALL.",
+      "JUST IN TIME BEFORE THE STARTING RAIN",
+      "MAKES THE ROCKS TOO SLIPPERY FOR YOU TO",
+      "CLAIM UP, YOU REACH THE RIM OF THE ROCKS",
+      "AND CATCH SIGHT OF THE DECAYED MASONRY",
+      "OF THE PIRATES AT ONCE..."
+    ]
+  ],
+  "options": {
+    "title": "OPTIONS",
+    "music": "MUSIC",
+    "sfx": "SOUND FX",
+    "lang": "LANGUAGE",
+    "gfx": "GRAPHICS",
+    "full": "FULL SCREEN",
+    "wide": "WIDE SCREEN",
+    "back": "BACK",
+    "on": "ON",
+    "off": "OFF",
+    "gfx_off": "ORIGINAL",
+    "gfx_mmpx": "HD MMPX",
+    "gfx_xbr": "HD XBR",
+    "gfx_2x": "PIXELS 2X",
+    "keys": [
+      "ARROWS, WASD - MOVE",
+      "UP, SPACE - JUMP, DOORS",
+      "CTRL, X - SWORD  DOWN - CROUCH",
+      "SWORD IN A JUMP - DOWN STRIKE",
+      "DOWN+LEFT/RIGHT - CRAWL",
+      "IN A JUMP DOWN, UP - PARACHUTE",
+      "T - USE TOOL   TAB - NEXT",
+      "O - OPTIONS  M - MUSIC  P - PHOTO",
+      "H GRAPHICS  L LANGUAGE  ESC PAUSE"
+    ],
+    "photo": "PHOTO MODE"
+  },
+  "photo": {
+    "hint": "PHOTO MODE - arrows/mouse: pan (Shift faster), wheel or +/-: zoom, 0: player, F: save view, G: save map, P/Esc: back"
+  },
+  "pause": {
+    "title": "PAUSE",
+    "resume": "RESUME",
+    "save": "SAVE GAME",
+    "load": "LOAD GAME",
+    "options": "OPTIONS",
+    "quit": "TITLE SCREEN",
+    "auto": "AUTO",
+    "empty": "EMPTY",
+    "saved": "SAVED",
+    "level": "LEVEL",
+    "continue": "C - CONTINUE"
+  },
+  "texts": {},
+  "credits": {
+    "idea": "IDEA",
+    "programming": "PROGRAMMING",
+    "graphics": "GRAPHICS",
+    "sound": "SOUND"
+  },
+  "egg": {
+    "port": "PC & ANDROID PORT",
+    "thanks": "THANKS FOR PLAYING!"
+  }
+}

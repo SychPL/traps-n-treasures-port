@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Traps 'n Treasures - Amiga w przegladarce</title>
+<script src="https://vamigaweb.github.io/js/vAmigaWeb_player.js"></script>
+<style>
+  body{margin:0;background:#10131a;color:#d8dde8;font-family:Segoe UI,sans-serif;text-align:center}
+  #box{max-width:960px;margin:16px auto;padding:0 16px}
+  #player_container{width:100%;aspect-ratio:4/3}
+  #vAmigaWeb{border:0}
+  .player_icon_btn{color:#e8c832;cursor:pointer}
+  button{background:#232a3a;color:#e8c832;border:1px solid #e8c832;border-radius:6px;padding:8px 14px;font-size:15px;cursor:pointer;margin:4px}
+  #start{width:100%;aspect-ratio:4/3;background:#000;display:flex;align-items:center;justify-content:center;font-size:26px;color:#e8c832;cursor:pointer}
+  p{color:#7f8ca6;font-size:13px}
+</style>
+</head>
+<body>
+<div id="box">
+  <h2 style="color:#e8c832">Traps 'n Treasures (Amiga, 1993)</h2>
+  <div><div id="start" onclick="start(this)">&#9654; Kliknij, aby uruchomic</div></div>
+  <div>
+    <button onclick="insert(DISKS[0])">Wloz dysk 1</button>
+    <button onclick="insert(DISKS[1])">Wloz dysk 2</button>
+    <button onclick="click1()">Klik myszy</button>
+    <button onclick="fire2()">Fire</button>
+    <button onclick="dump()">Zrzut RAM</button>
+  </div>
+  <p>Ekran z napisami (cracktro) czeka na lewy przycisk myszy: "Klik myszy". Intro gry pomija "Fire".<br>
+  Joystick: strzalki + spacja (najpierw kliknij w obraz; Esc oddaje kursor).<br>
+  Gdy gra poprosi o dysk B, kliknij "Wloz dysk 2" i wybierz df0. Emulator: vAmigaWeb, Kickstart: AROS.</p>
+</div>
+<script>
+const DIR = 'Traps-n-Treasures_Amiga_EN/';
+const DISKS = [
+  {url: DIR + "Traps 'n Treasures (1993)(Starbyte)(En)[cr PSG](Disk 1 of 2).adf", name: 'disk1.adf'},
+  {url: DIR + "Traps 'n Treasures (1993)(Starbyte)(En)[cr PSG](Disk 2 of 2).adf", name: 'disk2.adf'}
+];
+const touch = matchMedia('(pointer:coarse)').matches;
+function start(el) {
+  vAmigaWeb_player.samesite_file = {url: encodeURI(DISKS[0].url), name: DISKS[0].name};
+  // port2: joystick w porcie 2 (strzalki + spacja; na dotyku wirtualny)
+  const cfg = {AROS: true, wide: true, border: false, port2: true, touch};
+  vAmigaWeb_player.load(el, encodeURIComponent(JSON.stringify(cfg)));
+}
+// skrypt wykonywany wewnatrz emulatora (iframe)
+function emu(script) {
+  const ifr = document.getElementById('vAmigaWeb');
+  if (ifr) ifr.contentWindow.postMessage({cmd: 'script', script}, '*');
+}
+// Mysz w porcie 1: bez niej klik nie dociera do Amigi, a intro czeka na lewy przycisk.
+// Parametr "mouse" w konfiguracji vAmigaWeb jest czytany za wczesnie, wiec ustawiamy port po starcie.
+// ponytail: na dotyku mysz-touchpad zabralaby port 2 joystickowi, tam zostaje przycisk "Klik myszy"
+let mouseSet = false;
+addEventListener('message', e => {
+  if (e.data.msg !== 'render_run_state' || mouseSet || touch) return;
+  mouseSet = true;
+  emu("const p=document.getElementById('port1'); p.value='mouse'; p.dispatchEvent(new Event('change'));");
+});
+function click1() { emu("Module._wasm_mouse_button(1,1,1); setTimeout(()=>Module._wasm_mouse_button(1,1,0),300);"); }
+// Wyrocznia: zrzut chip RAM (+ slow RAM) do work/dumps przez work/oracle_server.py
+const DUMP_SCRIPT = `
+  const rd = (base, n) => { const b = new Uint8Array(n);
+    for (let a = 0; a < n; a += 2) { const w = wasm_peek16(base + a); b[a] = w >> 8; b[a + 1] = w & 255; }
+    return b; };
+  const ss = wasm_get_access_slow_size(), fs = wasm_get_access_fast_size();
+  parent.postMessage({msg: 'ramdump', chip: rd(0, wasm_get_access_chip_size()),
+                      slow: ss ? rd(0xC00000, ss) : null,
+                      fast: fs ? rd(wasm_get_fast_base() >>> 0, fs) : null}, '*');`;
+let dumpLabel = null;
+function dump() {
+  const l = prompt('Nazwa zrzutu (np. tytul, poziom1_start):', 'zrzut');
+  if (!l) return;
+  dumpLabel = l.replace(/[^A-Za-z0-9_-]/g, '_') + '_' + Date.now();
+  emu(DUMP_SCRIPT);
+}
+addEventListener('message', async e => {
+  if (e.data.msg !== 'ramdump' || !dumpLabel) return;
+  const label = dumpLabel; dumpLabel = null;
+  for (const [part, data] of [['chip', e.data.chip], ['slow', e.data.slow], ['fast', e.data.fast]]) {
+    if (!data) continue;
+    const r = await fetch('dump/' + label + '_' + part + '.bin', {method: 'POST', body: data});
+    if (!r.ok) return alert('Zapis nieudany (' + r.status + '). Serwer musi byc work/oracle_server.py (start-server.bat).');
+  }
+  alert('Zapisano work/dumps/' + label + '_*.bin');
+});
+function fire2() { emu("emit_joystick_cmd('2PRESS_FIRE'); setTimeout(()=>emit_joystick_cmd('2RELEASE_FIRE'),300);"); }
+async function insert(d) {
+  const ifr = document.getElementById('vAmigaWeb');
+  if (!ifr) return alert('Najpierw uruchom emulator.');
+  const file = new Uint8Array(await (await fetch(encodeURI(d.url))).arrayBuffer());
+  ifr.contentWindow.postMessage({cmd: 'load', file, file_name: d.name}, '*');
+}
+</script>
+<script src="work/oracle.js"></script>
+</body>
+</html>

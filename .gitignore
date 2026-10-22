@@ -1,0 +1,15 @@
+# Original game data - never commit (copyrighted). Produce it locally from your own disks.
+game/assets/
+extracted/
+*.adf
+*.ADF
+*.ipf
+*.zip
+
+# emulator memory/screen dumps and recordings used by the test harnesses (large, reproducible)
+work/dumps/
+work/__pycache__/
+work/server.log
+
+node_modules/
+dist/
