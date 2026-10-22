@@ -3,73 +3,73 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ADF extractor prototype</title>
+<title>Traps 'n Treasures - disk extractor</title>
 <style>
   body{margin:0;background:#10131a;color:#d8dde8;font:14px Segoe UI,sans-serif}
   main{max-width:720px;margin:16px auto;padding:0 16px}
   h1{color:#e8c832;font-size:20px}
-  pre{white-space:pre-wrap;background:#1a2030;padding:8px;border-radius:6px}
+  pre{white-space:pre-wrap;background:#1a2030;padding:8px;border-radius:6px;min-height:3em}
+  button,a.btn{background:#2a3450;color:#e8c832;border:1px solid #4a5a80;border-radius:4px;padding:6px 12px;font:inherit;
+    text-decoration:none;cursor:pointer;margin-right:8px}
   canvas{image-rendering:pixelated;width:512px;max-width:100%;background:#000}
 </style>
 </head>
 <body>
 <main>
-  <h1>Traps 'n Treasures - ADF extractor (prototype)</h1>
-  <p>Pick your own disk images (both at once is fine). Nothing leaves the browser.</p>
-  <label>ADF files: <input id="adf" type="file" accept=".adf" multiple></label>
+  <h1>Traps 'n Treasures - disk extractor</h1>
+  <p>Pick your own disk images of the game (the PSG release, both disks at once is fine). Everything happens in
+    this browser: the files are unpacked here and stored in the browser's cache for the game in <code>../game/</code>,
+    which uses them instead of its demo pack. Nothing is uploaded.</p>
+  <p><label>ADF files: <input id="adf" type="file" accept=".adf" multiple></label></p>
+  <p><a class="btn" href="../game/">Start the game</a><button id="clear">Remove extracted files</button></p>
   <pre id="log"></pre>
   <canvas id="tiles" width="256" height="16" hidden></canvas>
 </main>
 <script type="module">
-import { ppUnpack } from './ppdepack.js';
+import { identify } from './adf.js';
+import { extractMusic } from './music.js';
 
-// Game data ranges (boot block and crack sectors excluded, so the PSG disk 1 and its [a] variant both match).
-const DISKS = [
-  {name: 'disk 1', lo: 0x3200, hi: 0x5D6D8, sha1: '21ea697fc7aea748ef15f341203e47733934f0a0'},
-  {name: 'disk 2', lo: 0x3200, hi: 0xCA3E0, sha1: 'dd75f5794c5592e7dd2608e0448b69224a7db78d'},
-];
-const CHR_L1 = 0x2D5A4;                                // level 1 tiles + palette (PowerPacker file on disk 2)
-const log = s => document.getElementById('log').textContent += s + '\n';
-const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+const CACHE = 'tnt-assets-v1';
+const log = s => { document.getElementById('log').textContent += s + '\n'; };
+const TYPES = {png: 'image/png', json: 'application/json', med: 'application/octet-stream', bin: 'application/octet-stream'};
+const assetURL = path => new URL('../game/assets/' + path, location.href).href;
 
-async function identify(adf) {
-  if (adf.length !== 901120) return null;
-  for (const d of DISKS)
-    if (hex(await crypto.subtle.digest('SHA-1', adf.subarray(d.lo, d.hi))) === d.sha1) return d;
-  return null;
-}
+// the game page registers it too; registering here makes the very next game start use the extracted files
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('../game/sw.js', {scope: '../game/'}).catch(e => log('service worker: ' + e.message));
 
-// CHR!: "CHR!", planes.W, 0.W, 32 colours (12 bit), then 16x16 tiles, 5 planes x 32 B each (160 B per tile)
-function drawTiles(chr) {
-  const dv = new DataView(chr.buffer), n = (chr.length - 0x46) / 160 | 0;
-  const pal = Array.from({length: 32}, (_, i) => dv.getUint16(6 + 2 * i));
-  const cv = document.getElementById('tiles'), rows = Math.ceil(n / 16);
-  cv.height = rows * 16; cv.hidden = false;
-  const cx = cv.getContext('2d'), im = cx.createImageData(256, rows * 16);
-  for (let t = 0; t < n; t++)
-    for (let y = 0; y < 16; y++)
-      for (let x = 0; x < 16; x++) {
-        let c = 0;
-        for (let p = 0; p < 5; p++) c |= (dv.getUint16(0x46 + t * 160 + p * 32 + y * 2) >> (15 - x) & 1) << p;
-        const k = ((t >> 4) * 16 + y) * 256 * 4 + ((t & 15) * 16 + x) * 4, v = pal[c];
-        im.data.set([(v >> 8 & 15) * 17, (v >> 4 & 15) * 17, (v & 15) * 17, 255], k);
-      }
-  cx.putImageData(im, 0, 0);
-  return n;
-}
-
-document.getElementById('adf').onchange = async e => {
-  document.getElementById('log').textContent = '';
-  if (!crypto.subtle) return log('crypto.subtle is missing: open this page over https or http://localhost');
-  for (const f of e.target.files) {
+// files: File[] (or {name, arrayBuffer()}) -> number of stored assets
+export async function extractAll(files) {
+  if (!crypto.subtle) throw new Error('crypto.subtle is missing: open this page over https or http://localhost');
+  const disks = {};
+  for (const f of files) {
     const adf = new Uint8Array(await f.arrayBuffer()), d = await identify(adf);
-    log(`${f.name}: ${d ? 'recognised as ' + d.name : 'unknown disk (only the PSG crack is supported)'}`);
-    if (d?.name !== 'disk 2') continue;
-    const t0 = performance.now(), chr = ppUnpack(adf, CHR_L1);
-    const magic = String.fromCharCode(...chr.subarray(0, 4));
-    log(`  unpacked $${CHR_L1.toString(16)}: ${magic}, ${chr.length} B in ${(performance.now() - t0).toFixed(1)} ms`);
-    log(`  level 1 tile bank: ${drawTiles(chr)} tiles (CHR! palette, colour 1 = sky)`);
+    log(`${f.name}: ${d ? 'recognised as ' + d.name : 'unknown disk (only the PSG release is supported)'}`);
+    if (d) disks[d.id] = adf;
   }
+  const out = [], t0 = performance.now();
+  // tiles.js and levels.js already match the exported files (extract.test.mjs), but they are stored only together with
+  // the level tables (level{n}.json, still to do): a disk map with the demo pack's tile attributes would not be playable
+  for (const [name, run] of [['music', extractMusic]]) {
+    try { const r = run(disks); out.push(...r); log(`${name}: ${r.length} files`); }
+    catch (e) { log(`${name}: ${e.message}`); }
+  }
+  if (!out.length) { log('nothing extracted - the files stored before are kept'); return 0; }
+  await caches.delete(CACHE);                        // every extraction is one complete set, nothing left from an older one
+  const cache = await caches.open(CACHE);
+  for (const {path, data} of out)
+    await cache.put(assetURL(path), new Response(data, {headers: {'Content-Type': TYPES[path.split('.').pop()] || 'application/octet-stream'}}));
+  log(`stored ${out.length} files in ${((performance.now() - t0) / 1000).toFixed(1)} s - start the game to use them`);
+  return out.length;
+}
+window.extractAll = extractAll;
+
+document.getElementById('adf').onchange = e => {
+  document.getElementById('log').textContent = '';
+  extractAll([...e.target.files]).catch(err => log('error: ' + err.message));
+};
+document.getElementById('clear').onclick = async () => {
+  document.getElementById('log').textContent = '';
+  log((await caches.delete(CACHE)) ? 'extracted files removed - the game uses its demo pack again' : 'nothing to remove');
 };
 </script>
 </body>

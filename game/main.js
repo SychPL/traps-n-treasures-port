@@ -21,13 +21,22 @@ function fit() {
 function screenSize(w, h) { if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; cx.imageSmoothingEnabled = false; fit(); } }
 addEventListener('resize', fit); fit();
 
-const img = src => new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = src; });
-const json = src => fetch(src).then(r => r.json());
+// katalog assetow: game/assets (dane z wlasnych dyskietek - work/export_*.py, ekstraktor) albo pakiet demo game/assets-demo
+// (wlasna grafika i poziom testowy, repozytorium publiczne) - gdy assets/ nie ma albo ?assets=demo
+let ASSETS = 'assets/';
+const ap = src => src.startsWith('assets/') ? ASSETS + src.slice(7) : src;
+// wybor katalogu: GET level1.json z kontrola tresci (serwer bez HEAD albo z odpowiedzia 200 na brakujacy plik); kazde
+// wczytanie assetu czeka na wybor (dzwiek moze ruszyc pierwszym klawiszem wczesniej niz poziom)
+const assetsReady = (new URLSearchParams(location.search).get('assets') === 'demo' ? Promise.resolve(false)
+  : fetch('assets/level1.json').then(r => r.ok && r.json()).then(j => !!(j && j.w && j.attr), () => false)).then(ok => { if (!ok) ASSETS = 'assets-demo/'; });
+const afetch = src => assetsReady.then(() => fetch(ap(src)));
+const img = src => assetsReady.then(() => new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = ap(src); }));
+const json = src => afetch(src).then(r => r.json());
 
 async function load(name) {
   const [meta, map, surface, water, pmeta, psurf, pwater, hudTop, hudBottom] = await Promise.all([
     json(`assets/${name}.json`),
-    fetch(`assets/${name}.bin`).then(r => r.arrayBuffer()).then(b => new Uint8Array(b)),
+    afetch(`assets/${name}.bin`).then(r => r.arrayBuffer()).then(b => new Uint8Array(b)),
     img(`assets/${name}_surface.png`), img(`assets/${name}_water.png`),
     json('assets/player.json'), img('assets/player_surface.png'), img('assets/player_water.png'),
     img('assets/hud_top.png'), img('assets/hud_bottom.png')]);
@@ -61,6 +70,9 @@ async function load(name) {
   const GUARD = {'2f2e36': 0x2f2e38, '2f2f4e': 0x2f2f50};
   for (const o of objs.objects) if (GUARD[o.type]) { o.actor = 1; actors.actors.push({x: o.x, y: o.y, type: o.type, script: GUARD[o.type], sect: o.sect}); }
   Actors.load(actors);
+  // kafle skrzyn, kruchych kamieni i scian do wysadzenia gra naklada na mape z dysku (LEV!) przy starcie etapu - mapa
+  // z ekstraktora ich nie ma, eksport ze zrzutu juz tak (wtedy bez zmian)
+  for (const k of ['crates', 'brittle', 'bombwalls']) for (const e of (meta[k] && meta[k].list) || []) map[e.idx] = meta[k].tile;
   const rain = (actors.triggers || []).filter(t => t.kind === 'rain');
   return {...meta, rain, map, surface, water, hudTop, hudBottom, hudTopVit, shopBg, shopKeeper, mapMarker, toolIcons, msgBox, msgFont, msgFontMap, hofLogo, storyText, storyTextPl, storyBg, introStarbyte, introNightingale, treasureImg, treasureMap, endingBg, endingDark, endingSky, ending, menuImg, menuIcons, passIcons, menu, islandClean, mapAtlas, mapActors, shotsImg, gameoverImg, weapons, compassImg, compass, digits, lifeEmpty, font, fontMap, fontExt, fontExtMap, objs, shopAtlas, shopFrames, titleImg, islandImg, titleWide,
     actors: {surface: asurf, water: awater, banks: actors.banks}, sword: {surface: swS, water: swW}, player: {...pmeta, surface: psurf, water: pwater}};
@@ -852,7 +864,7 @@ const Music = {
     if (!name) { this.player.stop(); return; }
     // utwor poziomu: L4 zaczyna melodia 25 ($2DD142, flaga $30CC9F z punktow kontrolnych), reszta 11 (pozycja 0 -> skok na 18)
     const start = name === 'level' + levelNo ? this.pos(levelNo === 4 ? 25 : 11) : 0;
-    fetch(`assets/music/${name}.med`).then(r => r.arrayBuffer()).then(ab => {
+    afetch(`assets/music/${name}.med`).then(r => r.arrayBuffer()).then(ab => {
       if (this.playing !== name) return;
       this.player.play(ab); this.player.unpause(); if (start) this.player.setOrderRow(start, 0);
     }).catch(e => console.warn('muzyka:', e));
@@ -910,7 +922,7 @@ const Music = {
   async loadJingles(n) {
     if (!this.ready || this.jl === n || !L || !L.music_events) return;
     this.jl = n; this.jingles = {};
-    const [m, ab] = await Promise.all([import('./lib/chiptune3/chiptune3.js'), fetch(`assets/music/level${n}.med`).then(r => r.arrayBuffer())]);
+    const [m, ab] = await Promise.all([import('./lib/chiptune3/chiptune3.js'), afetch(`assets/music/level${n}.med`).then(r => r.arrayBuffer())]);
     const ctx = this.player.context, dec = new m.ChiptuneJsPlayer({repeatCount: 0, context: ctx});
     await new Promise(r => dec.onInitialized(r));
     let done = null; dec.onFullAudioData(r => done && done(r));
@@ -939,7 +951,7 @@ const Sfx = {
     if (!Music.ready || this.level === n) return;
     this.level = n; this.bufs = {};
     const [m, names, ab] = await Promise.all([import('./lib/chiptune3/chiptune3.js'), json('assets/sfx/sfx.json'),
-      fetch(`assets/sfx/level${n}.med`).then(r => r.arrayBuffer())]);
+      afetch(`assets/sfx/level${n}.med`).then(r => r.arrayBuffer())]);
     const ctx = Music.player.context, dec = new m.ChiptuneJsPlayer({repeatCount: 0, context: ctx});
     await new Promise(r => dec.onInitialized(r));
     const res = await new Promise(r => { dec.onFullAudioData(r); dec.decodeAll(ab); });
@@ -1518,7 +1530,7 @@ const MapActors = makeActors({absPos: true});
 function mapStart() {
   const S = L.mapActors.scripts;
   MapActors.load(L.mapActors); MapActors.spawn();
-  for (const k of ['flag1', 'flag2', levelNo === 1 ? 'sail' : 'anchor']) MapActors.spawnScript(...S[k]);
+  for (const k of ['flag1', 'flag2', levelNo === 1 ? 'sail' : 'anchor']) if (S && S[k]) MapActors.spawnScript(...S[k]);   // pakiet demo: bez skryptow mapy
   game.mapOn = true; game.mapF = 0;
 }
 function mapTick() { if (!game.mapOn) mapStart(); if (game.mapF++ % 2 === 0) MapActors.tick(160, 100); }
@@ -3164,7 +3176,7 @@ async function startLevel(n) {
   game.state = 'intro'; game.anyLatch = true;
 }
 const directLevel = new URLSearchParams(location.search).has('level');
-Promise.all([startLevel(levelNo), initLang()]).then(() => {
+assetsReady.then(() => Promise.all([startLevel(levelNo), initLang()])).then(() => {
   if (!directLevel) { game.state = 'splash'; game.splashT = performance.now(); Music.play('title'); }   // ?level=n pomija tytul i mape
   let acc = 0, last = performance.now();
   (function frame(now) {

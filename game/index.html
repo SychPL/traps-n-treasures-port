@@ -14,6 +14,9 @@
 <body>
 <canvas id="c" width="320" height="211"></canvas>
 <div id="info"></div>
+<script>   // assety z wlasnych dyskietek (extractor/) przez sw.js; nie w aplikacji Capacitor ani z file://
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !window.Capacitor) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
 <script src="hd.js"></script>
 <script src="actors.js"></script>
 <script src="touch.js"></script>

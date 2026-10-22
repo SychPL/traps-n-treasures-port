@@ -1423,3 +1423,23 @@ zgoda prawowitych właścicieli.
   ($2E982E), kucniecie ($2E9C54), poczatek czolgania ($2E9B12), spadochron ($2E9496), obrot do drzwi ($2E99B0) i
   postoj ($2E8E46). W wodzie kierunek z juz ustawiona flaga nie zmienia skryptu plywania - po chodzie w lewo i spadaniu
   z RIGHT gracz plywa dalej skryptem w prawo mimo LEFT.
+- Pakiet demo do repozytorium publicznego (github.com/SychPL/traps-n-treasures-port): `work/make_demo_assets.py`
+  rysuje wlasna grafike (pirat, kafle, przedmioty, HUD, fonty, ekrany) i buduje 4 krotkie etapy testowe (woda, drabina,
+  lina, kolce, skrzynie, lod, drzwi wyjscia) w formatach silnika -> `game/assets-demo/` (92 pliki, bez wrogow i muzyki).
+  Silnik: katalog assetow `ASSETS` - `game/assets` gdy `assets/level1.json` da sie pobrac i jest JSON-em etapu (w, attr),
+  inaczej `game/assets-demo`; `?assets=demo` wymusza demo. Mapa wyspy bez skryptow (demo) nie wywraca `mapStart`. Test
+  awaryjny przechodzi tez na pakiecie demo (4 etapy, 4000 klatek losowych klawiszy).
+- `work/export_public.py`: eksport z `git ls-tree HEAD` wg listy dozwolonych sciezek (dokladna glebokosc, bez
+  rozszerzen danych poza pakietem demo), uzgadnia katalog publiczny (usuwa niedozwolone, zostawia README/LICENSE/
+  .gitignore), czysci adres LAN i baner `start-server.bat` (poprawki z recenzji Codex).
+- Ekstraktor z dyskietek (trasa B z `EXTRACTOR.md`), `extractor/`: `adf.js` rozpoznaje dyski PSG po SHA-1 zakresu danych
+  gry i czyta pliki (PowerPacker gdy najwyzszy bit dlugosci), `music.js` 11 modulow MED, `tiles.js` banki kafli `CHR!`
+  (5 bitplanow, paleta w pliku od +6, kolor 1 przezroczysty; paleta podwodna: etap 1 RGB -2/-2/+2, etap 4 -5/+1/+3, kolor 0
+  bez zmian, obciecie 0..15), `levels.js` mapy `LEV!` (mapa od +18). Mapa z dysku nie ma kafli skrzyn, kruchych kamieni i
+  scian do wysadzenia - gra naklada je z tablic przy starcie etapu; silnik robi to teraz w `load()` z list w JSON etapu
+  (dla map ze zrzutu bez zmian). Zgodnosc z eksportem: muzyka 11/11 bajt w bajt, kafle 8/8 piksel w piksel, mapy 4/4 po
+  nalozeniu (`node extractor/extract.test.mjs`). Strona `extractor/index.html` zapisuje wynik w Cache Storage
+  (`tnt-assets-v1`) pod adresami `game/assets/...`; `game/sw.js` podaje je grze przed serwerem i przed pakietem demo
+  (nie w aplikacji Capacitor ani z file://). Sprawdzone w przegladarce: 23 pliki, mapa etapu 1 w grze = referencja. Na
+  razie strona zapisuje tylko muzyke - kafle i mapy dopiero razem z tabelami etapu (level{n}.json), bo z atrybutami kafli
+  pakietu demo etap z dysku nie bylby grywalny.

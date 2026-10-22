@@ -3,6 +3,16 @@
 Feasibility audit and plan (2026-10-19). Goal: publish `game/` without any original data. The player picks
 their own ADF disks in a form and every asset is extracted in the browser.
 
+## Status (2026-10-22)
+
+Done in `extractor/`: disk identification (`adf.js`), music (11 MED modules, byte-exact), tile banks (`CHR!` with the
+water palette rule, 8 atlases, pixel-exact) and level maps (`LEV!`, the engine lays the crate / brittle stone / bomb wall
+tiles from the level JSON lists, as the game does from its tables). `node extractor/extract.test.mjs` checks all of
+them against your own exported `game/assets/`. The page stores the music in Cache Storage and `game/sw.js` serves it to
+the game in place of the demo pack. Tiles and maps are stored only once the level tables (`level{n}.json`) can be
+extracted too: a disk map with the demo pack's tile attributes is not playable. Still to do: level tables, objects,
+enemies, the player, fonts, HUD, screens, sound effects.
+
 ## Verdict
 
 **Feasible. Recommended route: B (direct ADF unpack plus a fixed-layout loader), no emulator at runtime.**

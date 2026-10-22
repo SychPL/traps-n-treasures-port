@@ -22,7 +22,8 @@ SOFTWARE.
 
 ---
 
-This license covers the code and documentation in this repository only. The
+This license covers the code, the documentation and the demo pack (game/assets-demo) in this
+repository only. The
 original game "Traps 'n Treasures" (Amiga, 1993) - its graphics, levels, music,
 sound effects, texts and program - remains the property of its rights holders and
 is not part of this repository. game/lib/chiptune3 is a third-party library under
