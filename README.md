@@ -10,8 +10,8 @@ joystick input.
 the original program and the program itself remain the property of their rights holders and are not
 included. The repository ships a small **demo pack** instead: our own graphics and test stages drawn by a
 script, so the engine runs out of the box. To play the real game you need your own copy (two ADF disk
-images) and the assets produced from it (see below). This project is not affiliated with Starbyte or the
-original authors.
+images): the extractor page builds every asset from them in your browser (see below). This project is not
+affiliated with Starbyte or the original authors.
 
 ## Status
 
@@ -20,12 +20,14 @@ original authors.
   hundreds of thousands of recorded frames; remaining known differences are listed in `RESEARCH.md`.
 - Demo pack (`game/assets-demo/`): a pirate, items, tiles, HUD, fonts and four short test stages with water,
   ladders, a rope, spikes, crates, ice and an exit door. No enemies and no music yet.
-- Disk extractor (`extractor/`, plan and disk layout in [`EXTRACTOR.md`](EXTRACTOR.md)): one page that builds
-  the assets in the browser from your own ADF files. Done: disk identification, music, and the four stages (tile
-  banks, maps, level tables, level objects and enemies, rebuilt from the relocated main program and the stages' data
-  files, all equal to the assets exported from the running game), the player, the weapons, fonts, sound effects, the
-  shop, the treasure run, GAME OVER, the title picture, the HUD panels, the island map, the ending, the menu and the
-  Hall of Fame logo (101 of 108 files). Still to do: the intro logos and the story.
+- Disk extractor (`extractor/`, design and disk layout in [`EXTRACTOR.md`](EXTRACTOR.md)): one page that builds
+  all the assets the engine needs (107 files) in the browser from your own ADF files - the four stages with their
+  enemies, the player, weapons, music, sound effects, fonts, HUD, shop, island map, treasure run, title, intro,
+  story, menu, Hall of Fame, GAME OVER and the ending - from the game's own files and the tables of its relocated
+  main program. Every file was checked against the assets exported from the running game in the emulator; where
+  those exports were cut from screenshots, the extractor gives the clean original (exact palettes, no capture
+  artefacts). Two files are stand-ins: the wide title for wide screens (the title on black) and the first intro
+  screen (the game's own "Starbyte presents" text screen).
 
 ## Running
 
@@ -35,22 +37,25 @@ The game is static files. Serve the repository root over HTTP (for example `star
 The engine looks for `game/assets/` first and falls back to the demo pack in `game/assets-demo/` when it is
 missing (`?assets=demo` forces the demo pack). `?level=1..4` starts a stage directly.
 
-## Using the original assets
+## Playing the original game
 
-`game/assets/` is ignored by git. Put the files produced from your own disks there, with the same names as in
-the demo pack, and the engine uses them instead of the demo:
+Open `http://127.0.0.1:8435/extractor/`, pick both ADF files of your own copy (the PSG release), wait a few
+seconds, then "Start the game". The disks are identified by a hash of their game-data range, the files are
+unpacked (PowerPacker port in `extractor/ppdepack.js`) and the results are stored in the browser's Cache
+Storage; `game/sw.js` (a service worker) serves them to the game in place of the demo pack. Nothing is uploaded.
+"Remove extracted files" on the same page goes back to the demo pack. The service worker needs http(s) (not
+`file://`); `crypto.subtle` needs https or `http://localhost` / `127.0.0.1`.
 
+Other ways and tools:
+
+- `game/assets/` (ignored by git): files placed there with the same names as in the demo pack are used as well.
 - `work/export_*.py` - exporters that write `game/assets/*` (PNG banks, JSON tables, level maps, MED music).
   Most of them read memory dumps of the running game made with the emulator page `play.html` (vAmigaWeb with
   the AROS Kickstart; it expects your own ADF files in `Traps-n-Treasures_Amiga_EN/`, file names in
   `play.html`) and `work/oracle.js`; `export_music.py`, `export_shop.py` and `export_map.py` read the ADF files
   directly.
-- `extractor/` - the browser extractor: open `http://127.0.0.1:8435/extractor/` and pick both ADF files.
-  It identifies the disks by a hash of the game-data range, unpacks the files (PowerPacker port in
-  `extractor/ppdepack.js`) and stores the results in the browser's Cache Storage; `game/sw.js` (a service worker)
-  serves them to the game in place of the demo pack. Nothing is uploaded. "Remove extracted files" on the same
-  page goes back to the demo pack. Self-checks: `node extractor/ppdepack.test.mjs`, and with your own exported
-  `game/assets/`, `node extractor/extract.test.mjs`.
+- Self-checks of the extractor: `node extractor/ppdepack.test.mjs`, and with the exported `game/assets/` of your
+  own copy, `node extractor/extract.test.mjs` (every extracted file against the export).
 
 ## Making your own assets
 
@@ -70,7 +75,7 @@ or replace single files by hand: a file keeps working as long as it has the same
   (`work/dumps/`) are not included.
 - `extractor/` - the disk extractor (`adf.js` disks and files, `seg2.js` the game's own executable format,
   `music.js`, `tiles.js`, `levels.js` maps, `tables.js` level tables, `objects.js` level objects, `actors.js` enemies,
-  `player.js`, `weapons.js`, `hud.js` fonts and small HUD graphics, `sfx.js`, `shop.js`, `screens.js`, `map.js`, `menu.js`, `png.js`
+  `player.js`, `weapons.js`, `hud.js` fonts and small HUD graphics, `sfx.js`, `shop.js`, `screens.js`, `map.js`, `menu.js`, `intro.js`, `png.js`
   PNG encoder); `EXTRACTOR.md` - its design and the disk layout.
 - `RESEARCH.md` - research notes (in Polish): every rule of the original that the port implements, with the
   68000 addresses it comes from and the recording that confirmed it.
@@ -90,6 +95,5 @@ oryginalnej gry (grafiki, map, muzyki, tekstow programu). Zamiast nich jest paki
 czterema krotkimi etapami testowymi (`game/assets-demo/`, generator `work/make_demo_assets.py`) - gra rusza od
 razu. Do prawdziwej gry potrzebna jest wlasna kopia (dwie dyskietki ADF): pliki z niej zrobione wklada sie do
 `game/assets/` (te same nazwy co w demo) i silnik bierze je zamiast demo. Ekstraktor w przegladarce
-(`extractor/`) czyta wlasne pliki ADF i daje juz muzyke, cztery pelne etapy (kafle, mapy, tabele, przedmioty,
-wrogowie), gracza, bronie, czcionki, efekty dzwiekowe, sklep, bieg po skarb, GAME OVER, tytul, panele HUD, mape
-wyspy, zakonczenie i menu; intro i historia w drodze. Notatki z badan (`RESEARCH.md`) sa po polsku. Licencja kodu i pakietu demo: MIT.
+(`extractor/`) czyta wlasne pliki ADF (dwie dyskietki) i sklada z nich wszystkie pliki, ktorych gra potrzebuje -
+wystarczy otworzyc `extractor/`, wybrac oba pliki i uruchomic gre. Notatki z badan (`RESEARCH.md`) sa po polsku. Licencja kodu i pakietu demo: MIT.

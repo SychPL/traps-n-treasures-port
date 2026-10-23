@@ -72,6 +72,12 @@ export function extractScreens(disks) {
       ppx[k] = (v >> 8 & 15) * 17 / f | 0; ppx[k + 1] = (v >> 4 & 15) * 17 / f | 0; ppx[k + 2] = (v & 15) * 17 / f | 0; ppx[k + 3] = 255;
     }
   out.push({path: 'title.png', data: encodePNG(ppx, TITLE.w, TITLE.h)});
+  // wide title for wide screens: the export has a hand-painted widening; here the title in the middle on black
+  // (ponytail: a plain stand-in, replace the file with a better one if you have it)
+  const WW = 626, ox = WW - TITLE.w >> 1, wpx = new Uint8Array(WW * TITLE.h * 4);
+  for (let k = 3; k < wpx.length; k += 4) wpx[k] = 255;
+  for (let y = 0; y < TITLE.h; y++) wpx.set(ppx.subarray(y * TITLE.w * 4, (y + 1) * TITLE.w * 4), (y * WW + ox) * 4);
+  out.push({path: 'title_wide.png', data: encodePNG(wpx, WW, TITLE.h)});
   out.push(...ending(disks));
   return out;
 }

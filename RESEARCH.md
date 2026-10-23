@@ -1525,3 +1525,16 @@ zgoda prawowitych właścicieli.
   menu.png, menu_icons.png, pass_icons.png i hof_logo.png zastapione wersja z dysku (kolory x17 zamiast surowych 8-bit
   vAmiga; logo to caly BOB 205x57 z ciemnym konturem, wyciecie ze zrzutu gubilo ciemne piksele i 2 ostatnie wiersze).
   Hasla z tablicy $30C438.
+- Ekstraktor, intro i historia (`extractor/intro.js`): modul startowy (dysk 1 SEG2 $3214, seg1 $2000, seg2 $40D8) laduje
+  muzyke tytulu ($7DF4), tytul ($CC20), bank liter ($1BA58: 81 BOB-ow ozdobnej czcionki) i glowny program. Litery:
+  tablica znak -> BOB $58AA, krok = ramka (x2 - x1 + 1), spacja 8. Ekrany napisow ($2702): rekordy {x, y, tekst} od
+  $5AA6 ($00 nastepny, $01 koniec ekranu, $02 koniec): 'Starbyte presents', potem 'a' / 'Nightingale' / 'production';
+  paleta $50B6 z kolorami 0 i 2 = 000. Historia ($2408): wiersze od $5240 do $FF, srodek x 176, co 42 px; tlo = kolor 0
+  kazdej linii z tablicy $5AEE (21 kolorow w kolko). Przesuniecia okna: napisy -64, -29, historia -16. Wynik: tlo
+  historii i tekst piksel w piksel (stare ciecie gubilo kilka wierszy ozdobnikow), Nightingale = ujecie bez obcietego
+  czerwonego (zrzut w trakcie rozjasniania). Malowane logo Starbyte (intro_starbyte.png z ujecia) nie pochodzi z plikow
+  gry (modul startowy pokazuje tylko napis 'Starbyte presents', za glownym programem dysk 1 jest pusty) - ekstraktor
+  daje ekran napisu. Polska historia skladana z liter banku (akcenty jak w `export_story_pl.py`), title_wide = tytul na
+  czarnym tle (reczne poszerzenie z eksportu zostaje w prywatnych assetach). Silnik nie laduje juz island.png (nigdy
+  nie byl rysowany). Ekstraktor daje teraz komplet: 107 plikow, gra z repo publicznego + wlasne dyskietki nie siega do
+  pakietu demo; test awaryjny daje te same wyniki co na wyeksportowanych assetach.

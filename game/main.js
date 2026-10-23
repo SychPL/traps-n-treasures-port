@@ -56,8 +56,8 @@ async function load(name) {
     img('assets/weapons_surface.png'), img('assets/weapons_water.png'), json('assets/weapons.json')]);
   const weapons = {surface: wSurf, water: wWater, json: wMeta};
   const [compassImg, compass] = await Promise.all([img('assets/compass.png'), json('assets/compass.json')]);   // igla kompasu (work/export_compass.py)
-  const [shopAtlas, shopFrames, titleImg, islandImg, titleWide] = await Promise.all([img('assets/shop_items.png'), json('assets/shop_items.json'),
-    img('assets/title.png'), img('assets/island.png'), img('assets/title_wide.png')]);
+  const [shopAtlas, shopFrames, titleImg, titleWide] = await Promise.all([img('assets/shop_items.png'), json('assets/shop_items.json'),
+    img('assets/title.png'), img('assets/title_wide.png')]);
   const [digits, lifeEmpty, font, fontMap, fontExt, fontExtMap] = await Promise.all([img('assets/hud_digits.png'),
     img('assets/hud_life_empty.png'), img('assets/font.png'), json('assets/font.json'), img('assets/font_ext.png'), json('assets/font_ext.json')]);
   // obiekty poziomu (lista z gry); grafiki tylko dla typow juz wyciagnietych (work/export_objects.py)
@@ -74,7 +74,7 @@ async function load(name) {
   // starcie etapu - mapa z ekstraktora ich nie ma, eksport ze zrzutu juz tak (wtedy bez zmian)
   for (const k of ['crates', 'bombwalls', 'brittle']) for (const e of (meta[k] && meta[k].list) || []) map[e.idx] = meta[k].tile;
   const rain = (actors.triggers || []).filter(t => t.kind === 'rain');
-  return {...meta, rain, map, surface, water, hudTop, hudBottom, hudTopVit, shopBg, shopKeeper, mapMarker, toolIcons, msgBox, msgFont, msgFontMap, hofLogo, storyText, storyTextPl, storyBg, introStarbyte, introNightingale, treasureImg, treasureMap, endingBg, endingDark, endingSky, ending, menuImg, menuIcons, passIcons, menu, islandClean, mapAtlas, mapActors, shotsImg, gameoverImg, weapons, compassImg, compass, digits, lifeEmpty, font, fontMap, fontExt, fontExtMap, objs, shopAtlas, shopFrames, titleImg, islandImg, titleWide,
+  return {...meta, rain, map, surface, water, hudTop, hudBottom, hudTopVit, shopBg, shopKeeper, mapMarker, toolIcons, msgBox, msgFont, msgFontMap, hofLogo, storyText, storyTextPl, storyBg, introStarbyte, introNightingale, treasureImg, treasureMap, endingBg, endingDark, endingSky, ending, menuImg, menuIcons, passIcons, menu, islandClean, mapAtlas, mapActors, shotsImg, gameoverImg, weapons, compassImg, compass, digits, lifeEmpty, font, fontMap, fontExt, fontExtMap, objs, shopAtlas, shopFrames, titleImg, titleWide,
     actors: {surface: asurf, water: awater, banks: actors.banks}, sword: {surface: swS, water: swW}, player: {...pmeta, surface: psurf, water: pwater}};
 }
 

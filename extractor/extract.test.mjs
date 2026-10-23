@@ -18,6 +18,7 @@ import { extractShop } from './shop.js';
 import { extractScreens } from './screens.js';
 import { extractMap } from './map.js';
 import { extractMenu } from './menu.js';
+import { extractIntro } from './intro.js';
 
 const adf = n => new Uint8Array(readFileSync(`Traps-n-Treasures_Amiga_EN/Traps 'n Treasures (1993)(Starbyte)(En)[cr PSG](Disk ${n} of 2).adf`));
 const disks = {1: adf(1), 2: adf(2)};
@@ -59,6 +60,9 @@ const black = (b, k) => !b[k] && !b[k + 1] && !b[k + 2] && b[k + 3] === 255;
 const KNOWN = {
   'level4_objects_water.png': ['exported from a copper list with colours 16-31 at 000 below the water line', (a, b, k) => black(b, k)],
   'level4_actors_water.png': ['exported from a copper list with colours 16-31 at 000 below the water line', (a, b, k) => black(b, k)],
+  'intro_starbyte.png': ['the export shows a painted Starbyte logo of unknown source (not loaded by the game files); the extractor gives the boot module text screen', () => true],
+  'title_wide.png': ['a hand-painted widening in the export; the extractor puts the title on black', () => true],
+  'story_text_pl.png': ['our Polish story: the export used letters cut from a screenshot, the extractor the letter bank', () => true],
   'hud_bottom.png': ['the screenshot had tool 01 and crew 09; the engine repaints both boxes',
     (a, b, k, x, y) => x >= 52 && x < 74 && y >= 12 && y < 35 || x >= 124 && x < 137 && y >= 29 && y < 35],
 };
@@ -125,4 +129,5 @@ check(extractShop(disks));
 check(extractScreens(disks));
 check(extractMap(disks));
 check(extractMenu(disks));
+check(extractIntro(disks));
 if (bad) { console.log(`${bad} mismatches`); process.exit(1); }

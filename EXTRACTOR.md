@@ -3,7 +3,7 @@
 Feasibility audit and plan (2026-10-19). Goal: publish `game/` without any original data. The player picks
 their own ADF disks in a form and every asset is extracted in the browser.
 
-## Status (2026-10-22)
+## Status (2026-10-23)
 
 Done in `extractor/`, each checked against your own exported `game/assets/` by `node extractor/extract.test.mjs`:
 
@@ -44,11 +44,15 @@ Done in `extractor/`, each checked against your own exported `game/assets/` by `
   the Polish letters `font_ext` (`hud.js`, our patterns from `work/make_font_ext.py` on the game font).
 - the menu and the Hall of Fame logo (`menu.js`: BOB banks disk 2 PP `$9C6BC` and `$96AA8`, palette `$30C4B2`, positions
   fitted pixel for pixel to the screenshots; the screenshot cuts are replaced by this composition).
+- the intro screens, the story scroll with its bars and our Polish story (`intro.js`: the boot module's letter bank
+  disk 1 `$1BA58`, its text records and layout code); the wide title is a stand-in (the title on black).
 
-The page stores the music and, when both disks are given, the stages (tiles, maps, tables) in Cache Storage;
-`game/sw.js` serves them to the game in place of the demo pack (tested: the 4 original stages with the demo pack's
-graphics pass the 4000-frame random-input test). The player is a group of its own (disk 2 only). Still to do:
-the intro logos, the story, and the derived files `story_text_pl`, `title_wide`.
+The page stores everything the engine needs (107 files, in groups that only work together) in Cache Storage;
+`game/sw.js` serves them to the game in place of the demo pack (tested: the public repository with the extracted
+files makes no request to the demo pack, and the random-input crash test gives the same numbers as with the
+exported assets). Stand-ins: `title_wide.png` (the title on black; the export is a hand-painted widening) and
+`intro_starbyte.png` (the boot module's 'Starbyte presents' text screen; the export shows a painted logo whose file
+is not among the game files).
 
 ## Verdict
 
