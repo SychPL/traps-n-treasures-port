@@ -1559,3 +1559,38 @@ zgoda prawowitych właścicieli.
   regule "stan 1 z ziemi przez spadanie = 5". Regresja: rndb14oc zgodne, fullCheck i ocCheck bez innych zmian.
   Odrzucone: brak kucania na calym podrzucie / w klatkach 0-1 podrzutu (7 nowych roznic - kucniecie ze startu jest
   w wiekszosci nagran).
+- Sciana w czolganiu (rndb15oc 4673, sonda `work/probe_seq.js`: wskaznik skryptu $2F184C, opoznienie $2F185E): chod
+  w lewo, DOWN+RIGHT - czolganie w prawo ($2F18AE, klatka 14), predkosc jeszcze w lewo, krok w lewo w sciane ($2F4554 ->
+  $2E8EBC). Ta przy $9DD4 ustawia skrypt stojacego czolgania z tablicy $2EB194 ($2F18C0 prawo / $2F1984 lewo, klatka
+  18 / 47) bez sprawdzania kierunku ruchu (w chodzie $2E8F28 sprawdza flage chodu i znak predkosci $2E516E), od
+  nastepnej klatki. Skrypt trwa w ruchu w prawo (12 klatek 18 przy 1 px/kl.), bo obsluga kierunku ustawia skrypt
+  czolgania tylko przy nowej fladze chodu; koniec czolgania z kierunkiem - jeszcze klatka 18. Port: pl.crawlStop
+  (zderzenie przy kierunku przeciwnym do trzymanego; ten sam kierunek dalej pl.wallStand), kasowany zwrotem, koncem
+  czolgania albo puszczeniem kierunku. Regresja: rndb15oc zgodne, fullCheck i ocCheck bez innych zmian.
+- Stan 1 przez spadochron (rndb2oc 1972, sonda $30B8AE / $2EB20C / $30CC59): kucniecie na kolcach (1932) trwa przez
+  podrzut i przez spadochron otwarty UP+RIGHT w oknie DOWN - obsluga kierunku przy $2EB20C idzie od razu do skryptu
+  spadochronu ($2E922E -> $2E92B0 -> $2E92DA), DOWN przy $2EB20C nic nie robi ($2E9A46). Flaga gasnie w klatce
+  ladowania na kolcach; DOWN w stanie 1 - bez skryptu kucania, poza 29 ze startu podrzutu. Port: kierunek na
+  spadochronie nie konczy crouchSt (jak w locie podrzutu, gdzie wychodzi przy $30CC59 - $30CC54 jest wtedy 0).
+- Stan 3 przez lot podrzutu (rndb2oc 2323, sonda): czolganie z przejscia przez powierzchnie bloku w podrzucie (2310)
+  zostawia $30B8AE = 3 i $9DD4 przez caly lot z DOWN+RIGHT (skrypt spadania $2F189A). Po ladowaniu RIGHT bez DOWN:
+  flaga chodu byla skasowana przez start czolgania, wiec obsluga kierunku przy $9DD4 ustawia skrypt czolgania ($2F18AE,
+  klatka 14), koniec czolgania zeruje stan i $9DD4 - chod od nastepnej klatki. Bez kierunku od razu postoj $2EB1A4
+  (rndbC2oc 4536: klatka 0, nie 18). Port: crawlEnd tez z crawlSt0 (stan 3 z poprzedniej klatki), tylko z kierunkiem.
+- Cios w kucki na starcie podrzutu z kolcow (rndbR4oc 779-788): po koncu ciosu reszta blokady $30CC63 w powietrzu
+  pokazuje kucanie (2 / 31), nie postoj - skrypt po ciosie wraca do kucania, gdy stan 1. Port: poza blokady w podrzucie
+  wg crouchSt. Tez rndbR3oc 2995 (8 -> 4 klatki).
+- Pozostale roznice nagran 4x poza graczem: rnd11/26/30/33/37oc - zmienna kamery gry zerowana 172-173 klatki po
+  wejsciu w GAME OVER (wszystkie konca zyc na poziomie 3 w tym samym dole), potem klatka 0 po FIRE (nowa gra); harness
+  portu nie przechodzi ekranu GAME OVER. rnd6oc 2072, rnd22oc 2059, rndb3oc 4712, rndb6oc 1542: klatka przed UP
+  (skok / drabina) - gra ustawia x startu skoku / srodek drabiny w obsludze UP przed rysowaniem, wiec w nagraniu
+  pozycja z przesunieciem 1 pokazuje go klatke wczesniej (artefakt porownania, w grze bez roznicy).
+- Lina i podrzut z kolcow (rndbR4oc, teraz pozycje zgodne w calosci):
+  - Chwyt liny w podrzucie juz w powietrzu (liftI za startem): klatka spadania 88 / 87, nie klatka ze startu (855);
+    podrzut z flaga skoku (nietykalnosc) to lot - klatka skoku 33 zostaje i bez opadu przy chwycie (grabDrop: flaga
+    skoku przed opadem podrzutu, 1670 - stad caly rozjazd pozycji od 1671).
+  - Koniec liny u gory z UP i skok z liny z kierunkiem ($2E96E6 / $2E9628) ida od razu do startu skoku $2E9818, ktory
+    ustawia $30CC54 (z ziemi tylko zgloszenie $30CC55 przez $2E99A4): FIRE w tej samej klatce to cios w dol $2E9EB2
+    (klatka 8 / 37, 1599), nie cios z postawy.
+  - Skok z liny w klatce, w ktorej stopy schodza na podloge (zejscie po linie na kolce): klatka skoku 4 / 33 od razu
+    (1874, rndbR3oc 4959) - wczesniej zostawala klatka liny z galezi ladowania.
