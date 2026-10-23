@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Bank grafik sklepu: spakowany plik z dysku 2 (offset $B89C0, PowerPacker bez naglowka) z BOB-ami
 ikon towarow; oferty sklepow (work/export_level.py shops) wskazuja przesuniecia w tym banku.
-Paleta sklepu z ekranu oryginalu (zrzut shop_orig z emulatora, kolory odczytane przez dopasowanie tla do obrazu).
+Paleta sklepu: tablica docelowa rozjasniania $30B9BA (32 kolory, $2DFD3C gdy $30CC83) z glownego programu (zrzut lvl1_h);
+wczesniej dopasowana do zrzutu ekranu w trakcie rozjasniania (kolory 16-29 o stopien za ciemne, 30-31 zgadniete).
 Tlo sklepu: plik z dysku 2 $B503C (320x160, 5 planow kolejno), wczytywany przez $2DDD88 do bufora planszy.
 Wyjscie: game/assets/shop_items.png + .json {przesuniecie_hex: [sx, sy, w, h]}, game/assets/shop_bg.png.
 Uzycie: python work/export_shop.py
@@ -17,14 +18,14 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ADF2 = os.path.join(ROOT, 'Traps-n-Treasures_Amiga_EN', "Traps 'n Treasures (1993)(Starbyte)(En)[cr PSG](Disk 2 of 2).adf")
 START = 0xB89C0
 BG = 0xB503C
-SHOP_PAL = [0x000, 0xfa4, 0x020, 0xfca, 0xfa9, 0xe98, 0xd87, 0xc75, 0xb64, 0xa53, 0x940, 0x830, 0x720, 0x610, 0x410, 0xf50,
-            0x140, 0x060, 0x023, 0x434, 0x545, 0x656, 0x767, 0x878, 0xa9a, 0xcbc, 0xede, 0x000, 0xe00, 0xb00, 0xfff, 0x888]
+SHOP_PAL = 0x30B9BA
 
 if __name__ == '__main__':
     adf = open(ADF2, 'rb').read()
     flag, = struct.unpack_from('>I', adf, START - 4)
     bank = unpack_file(adf, START, flag & 0x7FFFFFFF)
-    pal = SHOP_PAL
+    fast = open(os.path.join(ROOT, 'work', 'dumps', 'lvl1_h_fast.bin'), 'rb').read()
+    pal = list(struct.unpack_from('>32H', fast, SHOP_PAL - 0x200000))
     flag, = struct.unpack_from('>I', adf, BG - 4)
     bg = unpack_file(adf, BG, flag & 0x7FFFFFFF)
     img = Image.new('RGB', (320, 160))
@@ -54,7 +55,6 @@ if __name__ == '__main__':
     anchor = {off: struct.unpack_from('>hh', bank, off + 4) for off, w, h in frames}
     json.dump({'%x' % o: list(p) + list(anchor[o]) for o, p in pos.items()}, open(os.path.join(ROOT, 'game', 'assets', 'shop_items.json'), 'w'))
     # sprzedawca ($2E1B40): aktorzy z baza w banku sklepu, polozenie swiata - 32 = ekran; bloki animacji z kodu gry
-    fast = open(os.path.join(ROOT, 'work', 'dumps', 'lvl1_h_fast.bin'), 'rb').read()
     W = lambda a: struct.unpack_from('>H', fast, a - 0x200000)[0]
     def seq(blk):
         out, a = [], blk

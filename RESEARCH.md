@@ -1473,3 +1473,26 @@ zgoda prawowitych właścicieli.
   (pos/ctl w czystym programie sa zerami, wysokosc ustawia gra). Klatki 37 i 41 to struktury w BSS ($13118) z zerowymi
   wskaznikami sprite'ow - eksporter rysowal w ich komorkach pamiec od adresu 4; silnik ich nie uzywa (4, 5, 13, 24-35).
   `export_weapons.py` pomija teraz wskazniki < $1000, weapons.json/png wyeksportowane od nowa; ekstraktor = eksport.
+- Ekstraktor, wrogowie (`extractor/actors.js`): banki BOB-ow wrogow z dysku 2 (PP: $34660, $4DBB0, $6B90C, $88924, w
+  chip pod $65484 / $64694 / $67494 / $68BA4, zmienna $30CD70) + bank przedmiotow, aktorzy, wyzwalacze, okna pamieci
+  skryptow jak w `work/export_actors.py`; procedura startowa bez disasemblera: slowa $237C / $22BC / $217C..$007A /
+  $43F9 do pierwszego $4E75. Zgodne: banki, klatki, kolejnosc, wyzwalacze, aktorzy, atlasy (poza level4_actors_water,
+  jak u obiektow). Rozni sie tylko stan z chwili zrzutu: okna pamieci 128 / 226 / 362 / 428 B na ~59 KB ($9800-$9A4B pod
+  seg2, zmienne gracza $9B8A-$9F03, flagi $2EB2xx w etapie 1, bufor $2FFD3A etapu 3, $3016ED / $3073FA etapu 4) oraz p3
+  10 aktorow etapu 3 (blok danych zmieniany w grze). Regresja nagran z emulatora (ocCheck 61 wierszy, fullCheck 117)
+  identyczna z aktorami z ekstraktora i z eksportu - silnik tych bajtow nie czyta albo czyta je po zapisaniu.
+- Ekstraktor, drobne grafiki (`extractor/hud.js`): czcionka z seg1 ($30AC49), okno komunikatu (bank przedmiotow +$2218),
+  czcionka komunikatow (bank $30CD5C = dysk 2 $15028 bez kompresji, w chip $71B4), ikony narzedzi i igla kompasu (bank
+  $30CD60 = dysk 2 $1F53C, chip $2747C), pociski ($F7F2 / $F870 w seg2). Paleta HUD = tablica w seg1 $30B6CE (+$2ED52),
+  rowna linii 20 coppera; reczna paleta 7 kolorow kompasu ma te same wartosci. Wszystko piksel w piksel.
+- Ekstraktor, efekty dzwiekowe (`extractor/sfx.js`): ta sama budowa utworu z blokiem na efekt co `work/export_sfx.py`,
+  z modulow muzyki etapow; sfx/level{n}.med bajt w bajt.
+- Paleta sklepu: $2DFD14 to rozjasnianie 32 kolorow ku tablicy docelowej - sklep ($30CC83) bierze $30B9BA, inny ekran
+  ($30CD08) $30B97A, plansza ($30C324 < 0) +$3C(A4). Paleta sklepu dopasowana wczesniej do zrzutu ekranu byla zlapana w
+  trakcie rozjasniania (kolory 16-29 o stopien za ciemne, 30-31 zgadniete); `export_shop.py` czyta teraz tablice z
+  programu, shop_bg.png / shop_items.png wyeksportowane od nowa. Ekstraktor (`extractor/shop.js`) = eksport.
+- Ekstraktor, bieg po skarb i GAME OVER (`extractor/screens.js`): bank diamentow = dysk 2 $B13B0 (w chip $299E4 na
+  czas biegu), serce = BOB 0 banku przedmiotow, niebo z tablic seg1; tapeta i bank GAME OVER z dysku 2 bez kompresji.
+  Paleta mapy wyspy nie lezy w programie jako zwykla tablica (szukane dopasowanie 26/32 kolorow +-1) - do RE.
+- Ekstraktor, ekran tytulowy: obraz z dysku 1 (PP $CC20, 352x290, 6 planow po kolei, EHB, 289 linii widocznych), paleta
+  32 kolorow w module startowym (dysk 1 $646E = SEG2 $3214 +$325A), ta sama w kazdej linii; title.png piksel w piksel.

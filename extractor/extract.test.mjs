@@ -11,6 +11,11 @@ import { extractLevels } from './tables.js';
 import { extractObjects } from './objects.js';
 import { extractPlayer } from './player.js';
 import { extractWeapons } from './weapons.js';
+import { extractActors } from './actors.js';
+import { extractHud } from './hud.js';
+import { extractSfx } from './sfx.js';
+import { extractShop } from './shop.js';
+import { extractScreens } from './screens.js';
 
 const adf = n => new Uint8Array(readFileSync(`Traps-n-Treasures_Amiga_EN/Traps 'n Treasures (1993)(Starbyte)(En)[cr PSG](Disk ${n} of 2).adf`));
 const disks = {1: adf(1), 2: adf(2)};
@@ -50,7 +55,19 @@ const canon = v => JSON.stringify(v, (k, x) => x && typeof x === 'object' && !Ar
 // and only the pixels the exporter drew opaque black may differ
 const KNOWN = {
   'level4_objects_water.png': 'exported from a copper list with colours 16-31 at 000 below the water line',
+  'level4_actors_water.png': 'exported from a copper list with colours 16-31 at 000 below the water line',
 };
+// actors JSON: the exports were taken from a running game, so the script memory windows (and level 3 fields read from
+// a data block the game changes) carry run-time state; compared are the window layout and everything else, the
+// differing window bytes are counted (the recordings replay the same with either file)
+const RUNTIME = {'level3_actors.json': [19, 20, 21, 22, 34, 35, 39, 40, 62, 64].map(i => ['actors', i, 'p3'])};
+function runtime(path, j) {
+  if (!path.endsWith('_actors.json')) return [j, ''];
+  for (const [...keys] of RUNTIME[path] || []) { const last = keys.pop(); delete keys.reduce((o, k) => o[k], j)[last]; }
+  const mem = j.mem;
+  j.mem = mem.map(([a, h]) => [a, h.length]);
+  return [j, mem];
+}
 const black = (px, k) => !px[k] && !px[k + 1] && !px[k + 2] && px[k + 3] === 255;
 
 let bad = 0;
@@ -71,7 +88,15 @@ function check(files) {
         }
       ok = a.w === b.w && a.h === b.h && !diff;
       note = `${a.w}x${a.h} vs ${b.w}x${b.h}, ${diff} pixels differ` + (known ? `, ${known} known (${KNOWN[path]})` : '');
-    } else if (path.endsWith('.json')) ok = canon(JSON.parse(new TextDecoder().decode(data))) === canon(JSON.parse(new TextDecoder().decode(ref)));
+    } else if (path.endsWith('.json')) {
+      const [a, ma] = runtime(path, JSON.parse(new TextDecoder().decode(data))), [b, mb] = runtime(path, JSON.parse(new TextDecoder().decode(ref)));
+      ok = canon(a) === canon(b);
+      if (ok && ma) {
+        let n = 0, d = 0;
+        ma.forEach(([, h], i) => { for (let k = 0; k < h.length; k += 2) { n++; if (h.substr(k, 2) !== mb[i][1].substr(k, 2)) d++; } });
+        note += `, script memory ${n} B, ${d} B run-time state`;
+      }
+    }
     else ok = data.length === ref.length && data.every((v, i) => v === ref[i]);
     if (!ok) bad++;
     console.log(`${ok ? 'ok' : 'XX'} ${path} ${note}`);
@@ -89,4 +114,9 @@ check(extractLevels(disks));
 check(extractObjects(disks));
 check(extractPlayer(disks));
 check(extractWeapons(disks));
+check(extractActors(disks));
+check(extractHud(disks));
+check(extractSfx(disks));
+check(extractShop(disks));
+check(extractScreens(disks));
 if (bad) { console.log(`${bad} mismatches`); process.exit(1); }

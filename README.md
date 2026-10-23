@@ -22,9 +22,10 @@ original authors.
   ladders, a rope, spikes, crates, ice and an exit door. No enemies and no music yet.
 - Disk extractor (`extractor/`, plan and disk layout in [`EXTRACTOR.md`](EXTRACTOR.md)): one page that builds
   the assets in the browser from your own ADF files. Done: disk identification, music, and the four stages (tile
-  banks, maps, level tables and level objects, rebuilt from the relocated main program and the stages' data files),
-  all equal to the assets exported from the running game), the player and the weapons. With them the original
-  stages play with the demo pack's HUD. Still to do: enemies, fonts, HUD, screens and sound effects.
+  banks, maps, level tables, level objects and enemies, rebuilt from the relocated main program and the stages' data
+  files, all equal to the assets exported from the running game), the player, the weapons, fonts, sound effects, the
+  shop, the treasure run, GAME OVER and the title picture (81 of 108 files). Still to do: the HUD panels, the island
+  map, menu, Hall of Fame, intro, story and ending screens.
 
 ## Running
 
@@ -68,8 +69,9 @@ or replace single files by hand: a file keeps working as long as it has the same
   emulator and in the port and compare position and animation frame by frame. The recordings themselves
   (`work/dumps/`) are not included.
 - `extractor/` - the disk extractor (`adf.js` disks and files, `seg2.js` the game's own executable format,
-  `music.js`, `tiles.js`, `levels.js` maps, `tables.js` level tables, `objects.js` level objects, `player.js`,
-  `weapons.js`, `png.js` PNG encoder); `EXTRACTOR.md` - its design and the disk layout.
+  `music.js`, `tiles.js`, `levels.js` maps, `tables.js` level tables, `objects.js` level objects, `actors.js` enemies,
+  `player.js`, `weapons.js`, `hud.js` fonts and small HUD graphics, `sfx.js`, `shop.js`, `screens.js`, `png.js` PNG
+  encoder); `EXTRACTOR.md` - its design and the disk layout.
 - `RESEARCH.md` - research notes (in Polish): every rule of the original that the port implements, with the
   68000 addresses it comes from and the recording that confirmed it.
 
@@ -88,5 +90,6 @@ oryginalnej gry (grafiki, map, muzyki, tekstow programu). Zamiast nich jest paki
 czterema krotkimi etapami testowymi (`game/assets-demo/`, generator `work/make_demo_assets.py`) - gra rusza od
 razu. Do prawdziwej gry potrzebna jest wlasna kopia (dwie dyskietki ADF): pliki z niej zrobione wklada sie do
 `game/assets/` (te same nazwy co w demo) i silnik bierze je zamiast demo. Ekstraktor w przegladarce
-(`extractor/`) czyta wlasne pliki ADF i daje juz muzyke, cztery etapy (kafle, mapy, tabele, przedmioty), gracza
-i bronie; grafika wrogow i ekranow w drodze. Notatki z badan (`RESEARCH.md`) sa po polsku. Licencja kodu i pakietu demo: MIT.
+(`extractor/`) czyta wlasne pliki ADF i daje juz muzyke, cztery pelne etapy (kafle, mapy, tabele, przedmioty,
+wrogowie), gracza, bronie, czcionki, efekty dzwiekowe, sklep, bieg po skarb, GAME OVER i tytul; panele HUD, mapa wyspy
+i ekrany (menu, intro, zakonczenie) w drodze. Notatki z badan (`RESEARCH.md`) sa po polsku. Licencja kodu i pakietu demo: MIT.

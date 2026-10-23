@@ -13,6 +13,10 @@ const BASE = {1: 0x9014, 2: 0x52024, 3: 0x52024, 4: 0x52024};
 const ATTR = {1: 0xFAF4, 2: 0xF8F4, 3: 0xFCF4, 4: 0xFEF4};   // tile attributes (word per tile, seg2)
 const STAGES = 0x30B70E;                                      // per stage {x.W, y.W, level table.L} ($2DCE44)
 const ITEMS = {at: 0x16E68, chip: 0x1EDA4};                   // item bank: raw file on disk 2, its chip address ($30CD58)
+// message font ($30CD5C) and HUD bank (tool icons, compass: $30CD60): raw files on disk 2, chip addresses in layout A
+const MSGFONT = {at: 0x15028, chip: 0x71B4}, HUDBANK = {at: 0x1F53C, chip: 0x2747C};
+// enemy BOB banks (PowerPacker on disk 2) and their chip addresses in layout A ($30CD70)
+const ENEMIES = {1: [0x34660, 0x65484], 2: [0x4DBB0, 0x64694], 3: [0x6B90C, 0x67494], 4: [0x88924, 0x68BA4]};
 
 const hex = v => v.toString(16);
 const find = (b, pat, from = 0, to = b.length) => {
@@ -39,6 +43,8 @@ export function stageMemory(disks, n) {
   const hunk = hunkData(disks[2], HUNK[n]), base = BASE[n];
   chip.set(hunk, base);
   chip.set(readFile(disks[2], ITEMS.at), ITEMS.chip);              // item BOBs, shared by every stage
+  chip.set(readFile(disks[2], ENEMIES[n][0]), ENEMIES[n][1]);       // the stage's enemy BOBs
+  for (const b of [MSGFONT, HUDBANK]) chip.set(readFile(disks[2], b.at), b.chip);
   const lev = readFile(disks[2], LEV[n]), ld = new DataView(lev.buffer, lev.byteOffset);
   const w = ld.getUint16(10) * ld.getUint16(14), h = ld.getUint16(12) * ld.getUint16(16);
   const fv = new DataView(fast.buffer), set = (a, v) => fv.setUint32(a - FB, v);
@@ -46,6 +52,8 @@ export function stageMemory(disks, n) {
   set(0x30CD98, base);                                             // area data
   set(0x30CBA2, base + new DataView(hunk.buffer, hunk.byteOffset).getUint32(4));   // start area
   set(0x30CD58, ITEMS.chip);                                       // item bank
+  set(0x30CD70, ENEMIES[n][1]);                                    // enemy bank
+  set(0x30CD5C, MSGFONT.chip); set(0x30CD60, HUDBANK.chip);
   fv.setUint16(0x30CAA2 - FB, w);                                  // A4+$22: map width
   return {chip, fast, base, w, h, map: lev.subarray(18)};
 }

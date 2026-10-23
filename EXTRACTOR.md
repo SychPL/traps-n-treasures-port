@@ -27,11 +27,21 @@ Done in `extractor/`, each checked against your own exported `game/assets/` by `
 - the player `player.json`, `player_surface.png`, `player_water.png` (`player.js`): the data hunk on disk 2 at
   `$940C` is the sprite bank (`$131A4` in the game), colours 16-31 of the level 1 `CHR!` palette, tinted under water.
 - weapons and the sword (`weapons.js`): the frame table `$308EA2` and the sprite data in seg2 of the main program.
+- actors `level{n}_actors.json` and their atlases (`actors.js`): the enemy BOB banks (disk 2 PP `$34660`, `$4DBB0`,
+  `$6B90C`, `$88924` at chip `$65484` / `$64694` / `$67494` / `$68BA4`), actors, triggers and the script memory windows.
+  Equal to the export except the run-time state the dumps carried (128-428 bytes of the ~59 KB windows, `p3` of 10
+  level 3 actors); the emulator recording regressions give the same result with either file.
+- the font, the message box and its font, tool icons, shots, the compass needle (`hud.js`): HUD palette from the main
+  program (`$30B6CE`, the copper line 20 colours); sound effects (`sfx.js`), built from the stage music modules;
+  the shop (`shop.js`) with the fade-in target palette `$30B9BA` (the export used a palette fitted to a screenshot taken
+  mid-fade, now fixed); the treasure run, GAME OVER and the title picture (`screens.js`; the title palette is in the
+  boot module, disk 1 `$646E`).
 
 The page stores the music and, when both disks are given, the stages (tiles, maps, tables) in Cache Storage;
 `game/sw.js` serves them to the game in place of the demo pack (tested: the 4 original stages with the demo pack's
 graphics pass the 4000-frame random-input test). The player is a group of its own (disk 2 only). Still to do:
-enemies, fonts, HUD, screens, sound effects.
+the HUD panels and digits, the island map (palette), menu, Hall of Fame, intro, story, ending, and the
+derived files (`font_ext`, `story_text_pl`, `title_wide`).
 
 ## Verdict
 

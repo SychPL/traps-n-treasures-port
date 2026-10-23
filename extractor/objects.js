@@ -60,7 +60,7 @@ function anim(m, t) {
   return [new Set(seq).size > 1 ? seq : null, delay];
 }
 
-function records({fast}, lst, width) {
+export function records({fast}, lst, width) {
   const fv = new DataView(fast.buffer), out = [];
   const ok = a => {
     const x = fv.getUint16(a), y = fv.getUint16(a + 2), fl = fv.getUint16(a + 4), t = fv.getUint32(a + 6);
@@ -75,7 +75,7 @@ function records({fast}, lst, width) {
   return out;
 }
 
-function sections({L, W}) {
+export function sections({L, W}) {
   const tab = L(L(0x30CD14) + 0x64), out = [];
   for (let i = 0; i < 256; i++) {
     const p = L(tab + 4 * i);
@@ -88,7 +88,7 @@ function sections({L, W}) {
 }
 
 // BOB: {w, h, ax, ay, ..., stored planes (+16), forced planes (+17), plane size (+22)}, mask plane at +26, then the planes
-function bob(chip, a, pal, px, cx, cy) {
+export function bob(chip, a, pal, px, W, cx, cy) {   // W: atlas width
   const dv = new DataView(chip.buffer), w = dv.getUint16(a), h = dv.getUint16(a + 2);
   const stored = chip[a + 16], forced = chip[a + 17], ps = dv.getUint16(a + 22), rb = ps / h | 0, d = a + 26;
   const planes = [0, 1, 2, 3, 4].filter(p => stored >> p & 1);
@@ -98,9 +98,19 @@ function bob(chip, a, pal, px, cx, cy) {
       if (!bit(d, x, y)) continue;
       let c = forced & ~stored;
       planes.forEach((p, k) => { c |= bit(d + ps * (k + 1), x, y) << p; });
-      const v = pal[c], k = ((cy + y) * CELL * 16 + cx + x) * 4;
+      const v = pal[c], k = ((cy + y) * W + cx + x) * 4;
       px[k] = (v >> 8 & 15) * 17; px[k + 1] = (v >> 4 & 15) * 17; px[k + 2] = (v & 15) * 17; px[k + 3] = 255;
     }
+}
+
+// BOB palettes of a stage: the copper palette above the water (colour 1 = the sky at the top) and under it (colour 1 =
+// water background; colours 2 and 3 are tinted only on the 2 mirror lines, below them the copper sets them back - level 1
+// copper list)
+export function stagePalettes(disks, n, lvl) {
+  const w12 = c => parseInt(c[1], 16) << 8 | parseInt(c[3], 16) << 4 | parseInt(c[5], 16);
+  const chr = chrPalette(readFile(disks[2], CHR[n]));
+  return [chr.map((v, c) => c === 1 ? w12(lvl.skyTop) : v),
+    waterPalette(chr, n).map((v, c) => c === 1 ? w12(lvl.waterColor) : c === 2 || c === 3 ? chr[c] : v)];
 }
 
 export function levelObjects(disks, n) {
@@ -161,15 +171,10 @@ export function levelObjects(disks, n) {
   const SECT = sections(m), sectOf = a => { const s = SECT.find(([p, e]) => p <= a && a < e); return s ? hex(s[0]) : null; };
   const objects = recs.map(r => ({x: r.x, y: r.y, type: hex(r.type), sect: sectOf(r.addr), ...(actors.has(r.type) ? {actor: 1} : {}),
     ...text(r), ...emit(r)}));
-  // palettes: the copper palette above the water (colour 1 = the sky at the top) and under it (colour 1 = water background;
-  // colours 2 and 3 are tinted only on the 2 mirror lines, below them the copper sets them back - level 1 copper list)
-  const w12 = c => parseInt(c[1], 16) << 8 | parseInt(c[3], 16) << 4 | parseInt(c[5], 16);
-  const chr = chrPalette(readFile(disks[2], CHR[n]));
-  const surf = chr.map((v, c) => c === 1 ? w12(lvl.skyTop) : v);
-  const water = waterPalette(chr, n).map((v, c) => c === 1 ? w12(lvl.waterColor) : c === 2 || c === 3 ? chr[c] : v);
+  const [surf, water] = stagePalettes(disks, n, lvl);
   const H = CELL * Math.max(1, Math.ceil(cells.length / 16)), png = pal => {
     const px = new Uint8Array(CELL * 16 * H * 4);
-    cells.forEach((a, i) => bob(mem.chip, a, pal, px, i % 16 * CELL, (i >> 4) * CELL));
+    cells.forEach((a, i) => bob(mem.chip, a, pal, px, CELL * 16, i % 16 * CELL, (i >> 4) * CELL));
     return encodePNG(px, CELL * 16, H);
   };
   return {json: {cell: CELL, objects, gfx}, surface: png(surf), water: png(water)};
