@@ -1,12 +1,20 @@
 // Small graphics from the main program and the HUD / font banks, as work/export_font.py, export_msgbox.py,
 // export_tools.py, export_shots.py and export_compass.py: font.png/json, msgbox.png, msgfont.png/json,
-// tool_icons.png, shots.png, compass.png/json.
+// tool_icons.png, shots.png, compass.png/json; and the HUD panels the export cut from emulator screenshots:
+// hud_top.png, hud_top_vit.png, hud_bottom.png, hud_life_empty.png, hud_digits.png.
+import { readFile } from './adf.js';
 import { encodePNG } from './png.js';
 import { stageMemory, reader, levelJSON } from './tables.js';
 import { bob, stagePalettes } from './objects.js';
 import { walkBank } from './actors.js';
 
 const FB = 0x200000, HUD_PAL = 0x30B6CE;   // HUD palette, 32 colours (main program +$2ED52; copper line 20)
+// HUD panels: disk 2 $A0824, 320 x 53, 5 planes one after another; lines 0-11 = top bar (screen lines 44-55),
+// 12-51 = bottom panel. The game draws into them: life fields = HUD bank BOB 0 (full) / $86 (empty), 11x9, at
+// x = 47 + 11 k ($308FA6, anchor 8, -1); the vitamin bar copies pixel columns ($309750) from 5 planes of 64x8 (8 B a
+// row, pointers at $309864) to x 256.., lines 1-8; the map box = BOB $1CF4 (19x25) at 249, 10 of the panel; digits
+// = 10 BOBs 5x6 from $16BC. On line 55 the copper turns colour 27 to 000 from x 135 on.
+const PANEL = 0xA0824, VIT = 0x309864;
 // game font 8x9 (1 bit) at $30AC49, 64 glyphs; character -> glyph
 const FONT = {at: 0x30AC49, h: 9, n: 64};
 const CHARS = {'!': 1, '"': 2, '%': 3, '&': 6, "'": 7, '(': 8, ')': 9, '*': 10, '+': 11, ',': 12, '-': 13, '.': 14, ':': 26, '?': 31};
@@ -55,5 +63,39 @@ export function extractHud(disks) {
     frames.push([16 * i, 0, f.w, f.h, f.ax, f.ay]);
   });
   out.push({path: 'compass.png', data: encodePNG(cpx, 128, 17)}, {path: 'compass.json', data: enc({anchor: [100, 24], frames})});
+  // HUD panels
+  const pf = readFile(disks[2], PANEL), PH = pf.length / 200, hb = L(0x30CD60);
+  const put = (px, w, x, y, v) => { const k = (y * w + x) * 4; px[k] = (v >> 8 & 15) * 17; px[k + 1] = (v >> 4 & 15) * 17; px[k + 2] = (v & 15) * 17; px[k + 3] = 255; };
+  const panel = (y0, h, line55) => {
+    const px = new Uint8Array(320 * h * 4);
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < 320; x++) {
+        let c = 0;
+        for (let p = 0; p < 5; p++) c |= (pf[p * 40 * PH + (y0 + y) * 40 + (x >> 3)] >> (7 - (x & 7)) & 1) << p;
+        put(px, 320, x, y, y0 + y === line55 && x >= 135 && c === 27 ? 0 : hud[c]);
+      }
+    return px;
+  };
+  const top = panel(0, 12, 11);
+  for (let i = 0; i < 5; i++) bob(mem.chip, hb, hud, top, 320, 50 + 11 * i, 1);      // 5 full life fields
+  const vit = top.slice();
+  for (let y = 0; y < 8; y++)
+    for (let c = 0; c < 62; c++) {
+      let v = 0;
+      for (let p = 0; p < 5; p++) v |= B(L(VIT + 4 * p) + y * 8 + (c >> 3)) >> (7 - (c & 7)) & 1 ? 1 << p : 0;
+      put(vit, 320, 256 + c, 1 + y, hud[v]);
+    }
+  const bot = panel(12, 40, -1);
+  bob(mem.chip, hb + 0x1CF4, hud, bot, 320, 249, 10);                                  // map box
+  for (const y of [12, 24]) for (let yy = y; yy < y + 6; yy++) for (let x = 147; x < 190; x++) put(bot, 320, x, yy, 0x304);   // score / gold: cleared
+  const cell = new Uint8Array(11 * 9 * 4), empty = new Uint8Array(9 * 7 * 4);
+  bob(mem.chip, hb + 0x86, hud, cell, 11, 0, 0);
+  for (let y = 0; y < 7; y++) empty.set(cell.subarray(((y + 1) * 11 + 1) * 4, ((y + 1) * 11 + 10) * 4), y * 9 * 4);
+  const dg = new Uint8Array(60 * 6 * 4);
+  for (let i = 0, a = hb + 0x16BC; i < 10; i++, a += W(a + 24)) bob(mem.chip, a, hud, dg, 60, 6 * i, 0);
+  for (let k = 0; k < dg.length; k += 4) if (dg[k] !== dg[k + 1] || dg[k] !== dg[k + 2] || dg[k] < 64) dg.fill(0, k, k + 4);   // the grey digit only
+  out.push({path: 'hud_top.png', data: encodePNG(top, 320, 12)}, {path: 'hud_top_vit.png', data: encodePNG(vit, 320, 12)},
+    {path: 'hud_bottom.png', data: encodePNG(bot, 320, 40)}, {path: 'hud_life_empty.png', data: encodePNG(empty, 9, 7)},
+    {path: 'hud_digits.png', data: encodePNG(dg, 60, 6)});
   return out;
 }

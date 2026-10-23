@@ -16,6 +16,7 @@ import { extractHud } from './hud.js';
 import { extractSfx } from './sfx.js';
 import { extractShop } from './shop.js';
 import { extractScreens } from './screens.js';
+import { extractMap } from './map.js';
 
 const adf = n => new Uint8Array(readFileSync(`Traps-n-Treasures_Amiga_EN/Traps 'n Treasures (1993)(Starbyte)(En)[cr PSG](Disk ${n} of 2).adf`));
 const disks = {1: adf(1), 2: adf(2)};
@@ -52,10 +53,13 @@ function decodePNG(buf) {
 const canon = v => JSON.stringify(v, (k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort()) : x);
 
 // differences where the exported file is the questionable one (EXTRACTOR.md, open points): same size and transparency,
-// and only the pixels the exporter drew opaque black may differ
+// and only the pixels the rule allows may differ (ours, reference, pixel offset, x, y)
+const black = (b, k) => !b[k] && !b[k + 1] && !b[k + 2] && b[k + 3] === 255;
 const KNOWN = {
-  'level4_objects_water.png': 'exported from a copper list with colours 16-31 at 000 below the water line',
-  'level4_actors_water.png': 'exported from a copper list with colours 16-31 at 000 below the water line',
+  'level4_objects_water.png': ['exported from a copper list with colours 16-31 at 000 below the water line', (a, b, k) => black(b, k)],
+  'level4_actors_water.png': ['exported from a copper list with colours 16-31 at 000 below the water line', (a, b, k) => black(b, k)],
+  'hud_bottom.png': ['the screenshot had tool 01 and crew 09; the engine repaints both boxes',
+    (a, b, k, x, y) => x >= 52 && x < 74 && y >= 12 && y < 35 || x >= 124 && x < 137 && y >= 29 && y < 35],
 };
 // actors JSON: the exports were taken from a running game, so the script memory windows (and level 3 fields read from
 // a data block the game changes) carry run-time state; compared are the window layout and everything else, the
@@ -68,7 +72,6 @@ function runtime(path, j) {
   j.mem = mem.map(([a, h]) => [a, h.length]);
   return [j, mem];
 }
-const black = (px, k) => !px[k] && !px[k + 1] && !px[k + 2] && px[k + 3] === 255;
 
 let bad = 0;
 function check(files) {
@@ -84,10 +87,10 @@ function check(files) {
         for (let i = 0; i < a.w * a.h; i++) {
           const ta = a.px[i * 4 + 3], tb = b.px[i * 4 + 3];
           if (ta !== tb || ta && (a.px[i * 4] !== b.px[i * 4] || a.px[i * 4 + 1] !== b.px[i * 4 + 1] || a.px[i * 4 + 2] !== b.px[i * 4 + 2]))
-            if (KNOWN[path] && ta === tb && black(b.px, i * 4)) known++; else diff++;
+            if (KNOWN[path] && ta === tb && KNOWN[path][1](a.px, b.px, i * 4, i % a.w, i / a.w | 0)) known++; else diff++;
         }
       ok = a.w === b.w && a.h === b.h && !diff;
-      note = `${a.w}x${a.h} vs ${b.w}x${b.h}, ${diff} pixels differ` + (known ? `, ${known} known (${KNOWN[path]})` : '');
+      note = `${a.w}x${a.h} vs ${b.w}x${b.h}, ${diff} pixels differ` + (known ? `, ${known} known (${KNOWN[path][0]})` : '');
     } else if (path.endsWith('.json')) {
       const [a, ma] = runtime(path, JSON.parse(new TextDecoder().decode(data))), [b, mb] = runtime(path, JSON.parse(new TextDecoder().decode(ref)));
       ok = canon(a) === canon(b);
@@ -119,4 +122,5 @@ check(extractHud(disks));
 check(extractSfx(disks));
 check(extractShop(disks));
 check(extractScreens(disks));
+check(extractMap(disks));
 if (bad) { console.log(`${bad} mismatches`); process.exit(1); }

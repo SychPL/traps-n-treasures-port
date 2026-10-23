@@ -36,12 +36,14 @@ Done in `extractor/`, each checked against your own exported `game/assets/` by `
   the shop (`shop.js`) with the fade-in target palette `$30B9BA` (the export used a palette fitted to a screenshot taken
   mid-fade, now fixed); the treasure run, GAME OVER and the title picture (`screens.js`; the title palette is in the
   boot module, disk 1 `$646E`).
+- the HUD panels (`hud.js`, disk 2 `$A0824` + life fields, vitamin source and map box drawn as the game draws them) and
+  the island map (`map.js`, palette = the fade-in target `$2F3B70`; the export's screenshot-fitted palette was taken
+  mid-fade, now fixed).
 
 The page stores the music and, when both disks are given, the stages (tiles, maps, tables) in Cache Storage;
 `game/sw.js` serves them to the game in place of the demo pack (tested: the 4 original stages with the demo pack's
 graphics pass the 4000-frame random-input test). The player is a group of its own (disk 2 only). Still to do:
-the HUD panels and digits, the island map (palette), menu, Hall of Fame, intro, story, ending, and the
-derived files (`font_ext`, `story_text_pl`, `title_wide`).
+menu, Hall of Fame, intro, story, ending, and the derived files (`font_ext`, `story_text_pl`, `title_wide`).
 
 ## Verdict
 

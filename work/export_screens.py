@@ -13,9 +13,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 D = os.path.join(ROOT, 'work', 'dumps')
 
 
-# paleta mapy wyspy (dopasowanie obrazu $A5284 do island.png)
-MAP_PAL = [0x04a, 0xa00, 0x000, 0x9a1, 0x781, 0x570, 0x350, 0x240, 0xaaa, 0xaa8, 0xaa7, 0xa96, 0xa84, 0x970, 0x860, 0x750,
-           0x643, 0x532, 0x421, 0x121, 0x343, 0x564, 0x899, 0xaaa, 0xaaa, 0xaaa, 0x8aa, 0x6aa, 0x4aa, 0x39a, 0x16a, 0x028]
+# paleta mapy wyspy: cel rozjasniania $2F3B70 (32 kolory, $2F3A8C co 4 takty, 16 krokow) z glownego programu (zrzut
+# lvl1_h); wczesniej dopasowana do zrzutu ekranu zrobionego w trakcie rozjasniania (jasne kolory obciete do $A)
+MAP_PAL = list(struct.unpack_from('>32H', open(os.path.join(D, 'lvl1_h_fast.bin'), 'rb').read(), 0x2F3B70 - 0x200000))
 
 
 def x17(img):

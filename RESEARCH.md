@@ -1496,3 +1496,15 @@ zgoda prawowitych właścicieli.
   Paleta mapy wyspy nie lezy w programie jako zwykla tablica (szukane dopasowanie 26/32 kolorow +-1) - do RE.
 - Ekstraktor, ekran tytulowy: obraz z dysku 1 (PP $CC20, 352x290, 6 planow po kolei, EHB, 289 linii widocznych), paleta
   32 kolorow w module startowym (dysk 1 $646E = SEG2 $3214 +$325A), ta sama w kazdej linii; title.png piksel w piksel.
+- Ekstraktor, panele HUD (`extractor/hud.js`): plik dysku 2 $A0824 (320x53, 5 planow po kolei, paleta HUD), linie 0-11
+  gorny pasek, 12-51 dolny panel. Gra dorysowuje: pola zycia = BOB 0 (pelne) / $86 (puste) banku HUD, 11x9, x = 47 + 11k
+  (kotwica 8, -1; $308FA6); pasek witamin kopiuje kolumny pikseli ($309750) z 5 planow 64x8 (wskazniki $309864, 8 B na
+  wiersz) do x 256.., linie 1-8; pole mapy = BOB $1CF4 (19x25) w 249, 10 panelu; cyfry = 10 BOB-ow 5x6 od $16BC (pierwszy,
+  $1696, to puste pole). W linii 55 copper zmienia kolor 27 na 000 od x 135. hud_top, hud_life_empty, hud_digits piksel w
+  piksel; hud_bottom rozni sie tylko licznikiem narzedzia i zalogi (stan gry na zrzucie, silnik je przemalowuje).
+  hud_top_vit.png byl wyciety ze zrzutu z surowymi 8-bitowymi kolorami vAmiga (np. #30003f zamiast #330044) - zastapiony
+  wersja z dysku (= x17 starego w obszarze witamin).
+- Paleta mapy wyspy: $2F3A8C rozjasnia 32 kolory listy coppera mapy ($9DEC, kolory od $9E7A) ku tablicy $2F3B70, co 4
+  takty, 16 krokow. Paleta dopasowana do zrzutu byla w trakcie rozjasniania (jasne kolory obciete do $A: plaze, zamek,
+  fale za ciemne); `export_screens.py` czyta tablice z programu, island_clean / map_actors / map_marker wyeksportowane od
+  nowa. Ekstraktor (`extractor/map.js`) = eksport; w oknie skryptow mapy 2 B stanu ze zrzutu.
