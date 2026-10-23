@@ -26,9 +26,9 @@ if __name__ == '__main__':
         if not 0x1000 <= f < 0x80000:
             continue
         w, h, ax, ay = struct.unpack_from('>4h', chip, f)
-        if not (0 < w <= 16 and 0 < h <= CELL):
-            continue
         p0, p1 = struct.unpack_from('>2I', chip, f + 16)
+        if not (0 < w <= 16 and 0 < h <= CELL) or p0 < 0x1000 or p1 < 0x1000:
+            continue                                     # 37, 41: struktury w BSS bez sprite'ow (rysowaly pamiec od $4)
         x0, y0 = i % COLS * CELL, i // COLS * CELL
         for k, pal in (('surface', surf), ('water', water)):
             px = imgs[k].load()

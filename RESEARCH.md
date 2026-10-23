@@ -1468,3 +1468,8 @@ zgoda prawowitych właścicieli.
   kolory 16-31 (sprite'y) pod woda (kolor 16: $EC1 -> $CA3), wiec palety teraz z lvl1_h; player_water.png i
   sword_water.png wyeksportowane od nowa (player_surface bez zmian). Ekstraktor (`extractor/player.js`, hunk danych z
   dysku 2 $940C = bank $131A4) daje to samo piksel w piksel.
+- Ekstraktor, bronie i miecz (`extractor/weapons.js`): tablica klatek $308EA2 z glownego programu, struktury i dane
+  sprite'ow w seg2 (bez zmian wzgledem zrzutu); miecz = pary SPR4/5 $C298/$C2C0 (w prawo) i $C300/$C328 (w lewo), 8 linii
+  (pos/ctl w czystym programie sa zerami, wysokosc ustawia gra). Klatki 37 i 41 to struktury w BSS ($13118) z zerowymi
+  wskaznikami sprite'ow - eksporter rysowal w ich komorkach pamiec od adresu 4; silnik ich nie uzywa (4, 5, 13, 24-35).
+  `export_weapons.py` pomija teraz wskazniki < $1000, weapons.json/png wyeksportowane od nowa; ekstraktor = eksport.

@@ -26,11 +26,12 @@ Done in `extractor/`, each checked against your own exported `game/assets/` by `
   (the copper tints them only on the 2 mirror lines under the water line).
 - the player `player.json`, `player_surface.png`, `player_water.png` (`player.js`): the data hunk on disk 2 at
   `$940C` is the sprite bank (`$131A4` in the game), colours 16-31 of the level 1 `CHR!` palette, tinted under water.
+- weapons and the sword (`weapons.js`): the frame table `$308EA2` and the sprite data in seg2 of the main program.
 
 The page stores the music and, when both disks are given, the stages (tiles, maps, tables) in Cache Storage;
 `game/sw.js` serves them to the game in place of the demo pack (tested: the 4 original stages with the demo pack's
 graphics pass the 4000-frame random-input test). The player is a group of its own (disk 2 only). Still to do:
-enemies, the sword and weapons, fonts, HUD, screens, sound effects.
+enemies, fonts, HUD, screens, sound effects.
 
 ## Verdict
 

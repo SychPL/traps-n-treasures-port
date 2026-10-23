@@ -10,6 +10,7 @@ import { extractMaps } from './levels.js';
 import { extractLevels } from './tables.js';
 import { extractObjects } from './objects.js';
 import { extractPlayer } from './player.js';
+import { extractWeapons } from './weapons.js';
 
 const adf = n => new Uint8Array(readFileSync(`Traps-n-Treasures_Amiga_EN/Traps 'n Treasures (1993)(Starbyte)(En)[cr PSG](Disk ${n} of 2).adf`));
 const disks = {1: adf(1), 2: adf(2)};
@@ -87,4 +88,5 @@ check(extractMaps(disks).map(({path, data}) => {
 check(extractLevels(disks));
 check(extractObjects(disks));
 check(extractPlayer(disks));
+check(extractWeapons(disks));
 if (bad) { console.log(`${bad} mismatches`); process.exit(1); }
