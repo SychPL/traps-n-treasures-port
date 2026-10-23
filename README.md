@@ -22,9 +22,9 @@ original authors.
   ladders, a rope, spikes, crates, ice and an exit door. No enemies and no music yet.
 - Disk extractor (`extractor/`, plan and disk layout in [`EXTRACTOR.md`](EXTRACTOR.md)): one page that builds
   the assets in the browser from your own ADF files. Done: disk identification, music, and the four stages (tile
-  banks, maps and level tables, rebuilt from the relocated main program and the stages' data files), all equal to
-  the assets exported from the running game. With them the original stages play with the demo pack's graphics.
-  Still to do: objects, enemies, the player, fonts, HUD, screens and sound effects.
+  banks, maps, level tables and level objects, rebuilt from the relocated main program and the stages' data files),
+  all equal to the assets exported from the running game), and the player. With them the original stages play with
+  the demo pack's HUD. Still to do: enemies, weapons, fonts, HUD, screens and sound effects.
 
 ## Running
 
@@ -68,8 +68,8 @@ or replace single files by hand: a file keeps working as long as it has the same
   emulator and in the port and compare position and animation frame by frame. The recordings themselves
   (`work/dumps/`) are not included.
 - `extractor/` - the disk extractor (`adf.js` disks and files, `seg2.js` the game's own executable format,
-  `music.js`, `tiles.js`, `levels.js` maps, `tables.js` level tables, `png.js` PNG encoder); `EXTRACTOR.md` - its
-  design and the disk layout.
+  `music.js`, `tiles.js`, `levels.js` maps, `tables.js` level tables, `objects.js` level objects, `player.js`,
+  `png.js` PNG encoder); `EXTRACTOR.md` - its design and the disk layout.
 - `RESEARCH.md` - research notes (in Polish): every rule of the original that the port implements, with the
   68000 addresses it comes from and the recording that confirmed it.
 
@@ -88,5 +88,5 @@ oryginalnej gry (grafiki, map, muzyki, tekstow programu). Zamiast nich jest paki
 czterema krotkimi etapami testowymi (`game/assets-demo/`, generator `work/make_demo_assets.py`) - gra rusza od
 razu. Do prawdziwej gry potrzebna jest wlasna kopia (dwie dyskietki ADF): pliki z niej zrobione wklada sie do
 `game/assets/` (te same nazwy co w demo) i silnik bierze je zamiast demo. Ekstraktor w przegladarce
-(`extractor/`) czyta wlasne pliki ADF i daje juz muzyke oraz cztery etapy (kafle, mapy, tabele); grafika postaci,
-przedmiotow, wrogow i ekranow w drodze. Notatki z badan (`RESEARCH.md`) sa po polsku. Licencja kodu i pakietu demo: MIT.
+(`extractor/`) czyta wlasne pliki ADF i daje juz muzyke, cztery etapy (kafle, mapy, tabele, przedmioty) i gracza;
+grafika wrogow, broni i ekranow w drodze. Notatki z badan (`RESEARCH.md`) sa po polsku. Licencja kodu i pakietu demo: MIT.

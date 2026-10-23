@@ -8,6 +8,8 @@ import { extractMusic } from './music.js';
 import { extractTiles } from './tiles.js';
 import { extractMaps } from './levels.js';
 import { extractLevels } from './tables.js';
+import { extractObjects } from './objects.js';
+import { extractPlayer } from './player.js';
 
 const adf = n => new Uint8Array(readFileSync(`Traps-n-Treasures_Amiga_EN/Traps 'n Treasures (1993)(Starbyte)(En)[cr PSG](Disk ${n} of 2).adf`));
 const disks = {1: adf(1), 2: adf(2)};
@@ -43,6 +45,13 @@ function decodePNG(buf) {
 // JSON with sorted object keys (the exporters and the extractor write the fields in different orders)
 const canon = v => JSON.stringify(v, (k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort()) : x);
 
+// differences where the exported file is the questionable one (EXTRACTOR.md, open points): same size and transparency,
+// and only the pixels the exporter drew opaque black may differ
+const KNOWN = {
+  'level4_objects_water.png': 'exported from a copper list with colours 16-31 at 000 below the water line',
+};
+const black = (px, k) => !px[k] && !px[k + 1] && !px[k + 2] && px[k + 3] === 255;
+
 let bad = 0;
 function check(files) {
   for (const {path, data} of files) {
@@ -52,14 +61,15 @@ function check(files) {
     let ok, note = `${data.length} B`;
     if (path.endsWith('.png')) {
       const a = decodePNG(data), b = decodePNG(ref);
-      let diff = 0;
+      let diff = 0, known = 0;
       if (a.w === b.w && a.h === b.h)
         for (let i = 0; i < a.w * a.h; i++) {
           const ta = a.px[i * 4 + 3], tb = b.px[i * 4 + 3];
-          if (ta !== tb || ta && (a.px[i * 4] !== b.px[i * 4] || a.px[i * 4 + 1] !== b.px[i * 4 + 1] || a.px[i * 4 + 2] !== b.px[i * 4 + 2])) diff++;
+          if (ta !== tb || ta && (a.px[i * 4] !== b.px[i * 4] || a.px[i * 4 + 1] !== b.px[i * 4 + 1] || a.px[i * 4 + 2] !== b.px[i * 4 + 2]))
+            if (KNOWN[path] && ta === tb && black(b.px, i * 4)) known++; else diff++;
         }
       ok = a.w === b.w && a.h === b.h && !diff;
-      note = `${a.w}x${a.h} vs ${b.w}x${b.h}, ${diff} pixels differ`;
+      note = `${a.w}x${a.h} vs ${b.w}x${b.h}, ${diff} pixels differ` + (known ? `, ${known} known (${KNOWN[path]})` : '');
     } else if (path.endsWith('.json')) ok = canon(JSON.parse(new TextDecoder().decode(data))) === canon(JSON.parse(new TextDecoder().decode(ref)));
     else ok = data.length === ref.length && data.every((v, i) => v === ref[i]);
     if (!ok) bad++;
@@ -75,4 +85,6 @@ check(extractMaps(disks).map(({path, data}) => {
   return {path, data: m};
 }));
 check(extractLevels(disks));
+check(extractObjects(disks));
+check(extractPlayer(disks));
 if (bad) { console.log(`${bad} mismatches`); process.exit(1); }

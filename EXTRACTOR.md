@@ -19,11 +19,18 @@ Done in `extractor/`, each checked against your own exported `game/assets/` by `
   map while laying them (crates, then bomb walls, then stones). Sky: the level table +`$54` points to one colour per
   4 lines, drawn `[k, previous, k, k]`; the window of lines the engine uses, the water line, the 2 mirror colours and
   the water background (`$003`) are measured constants in `RECIPE`.
+- level objects `level{n}_objects.json` and their BOB atlases (`objects.js`): the record lists in the main program,
+  the item bank (disk 2 `$16E68`, raw, at chip `$1EDA4`), descriptors, animations, texts and drip emitters as
+  `export_objects.py` reads them; JSON equal in all 4 stages, atlases pixel-exact except `level4_objects_water.png`
+  (see open points). Underwater palette by rule: `CHR!` tinted, colour 1 = water background, colours 2 and 3 untinted
+  (the copper tints them only on the 2 mirror lines under the water line).
+- the player `player.json`, `player_surface.png`, `player_water.png` (`player.js`): the data hunk on disk 2 at
+  `$940C` is the sprite bank (`$131A4` in the game), colours 16-31 of the level 1 `CHR!` palette, tinted under water.
 
 The page stores the music and, when both disks are given, the stages (tiles, maps, tables) in Cache Storage;
 `game/sw.js` serves them to the game in place of the demo pack (tested: the 4 original stages with the demo pack's
-graphics pass the 4000-frame random-input test). Still to do: objects, enemies, the player, fonts, HUD, screens, sound
-effects.
+graphics pass the 4000-frame random-input test). The player is a group of its own (disk 2 only). Still to do:
+enemies, the sword and weapons, fonts, HUD, screens, sound effects.
 
 ## Verdict
 
@@ -288,10 +295,15 @@ the developer's oracle for verification, as today.
 
 ## 8. Open points and follow-ups
 
-- `export_actors.py` and `export_objects.py` take the underwater palette at copper line `water + 50`. For
-  level 4 that is line 239, inside the HUD panel, where colours 16-31 are all `000`. Line 189 has a proper
-  underwater palette (`9d4 8b7 686...`). So `level4_actors_water.png` and `level4_objects_water.png` are
-  probably drawn black. Verify in game, then fix the exporter.
+- `export_actors.py` and `export_objects.py` take the underwater palette at copper line `water + 50`. In the level 4
+  dump (`lvl4_a`) the copper list sets colours 16-31 to `000` from line 191 (2 lines under the water line 189) and
+  colours 2-3 to `000` from line 207, so `level4_actors_water.png` and `level4_objects_water.png` are drawn black there.
+  The player uses colours 16-31 too, so this is probably a copper list caught while being rebuilt, not the look of the
+  game. The extractor uses the level 1 rule instead (`extract.test.mjs` lists the file as a known difference). Verify
+  in the emulator under water in level 4, then fix the exporter or the rule.
+- The tile water atlases (`level{1,4}_water.png`) were taken at the water line itself, where the copper also tints
+  colours 2 and 3; 2 lines lower it sets them back. Deep water tiles with colours 2-3 are therefore slightly off in
+  both the export and the extractor (the engine has one water atlas). Small; fix together with the mirror lines.
 - Sources still unknown: intro logos and story font (candidates: d1 `$1BA58` and the boot module), HUD digit
   glyphs, the rest of `SHOP_PAL`, `MAP_PAL`.
 - `title_wide.png` is a hand-made derivative. It needs a generator or has to go.

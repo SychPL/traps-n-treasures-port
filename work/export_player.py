@@ -54,7 +54,8 @@ if __name__ == '__main__':
     prefix = sys.argv[1]
     chip = open(prefix + '_chip.bin', 'rb').read()
     out = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'game', 'assets')
-    surf, water, _ = palettes(chip, LEVELS['level1'])
+    # palety z lvl1_h: tam linia 143 (woda poziomu 1) jest pod woda - w lvl1_g jeszcze nad nia (gracz pod woda bez odcienia)
+    surf, water, _ = palettes(open(os.path.join(os.path.dirname(prefix), 'lvl1_h_chip.bin'), 'rb').read(), LEVELS['level1'])
     fr = frames(chip)
     sheet(fr, surf).save(os.path.join(out, 'player_surface.png'))
     sheet(fr, water).save(os.path.join(out, 'player_water.png'))

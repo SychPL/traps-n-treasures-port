@@ -16,7 +16,7 @@ from export_level import LEVELS, palettes
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if __name__ == '__main__':
-    lvl = open(os.path.join(ROOT, 'work', 'dumps', 'lvl1_g_chip.bin'), 'rb').read()
+    lvl = open(os.path.join(ROOT, 'work', 'dumps', 'lvl1_h_chip.bin'), 'rb').read()   # linia 143 pod woda (w lvl1_g nad nia)
     pals = dict(zip(('surface', 'water'), palettes(lvl, LEVELS['level1'])[:2]))
     for name, pal in pals.items():
         out = Image.new('RGBA', (32, 8))

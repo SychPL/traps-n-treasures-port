@@ -12,6 +12,7 @@ const HUNK = {1: 0x21AA4, 2: 0x3C314, 3: 0x56DB0, 4: 0x72500};
 const BASE = {1: 0x9014, 2: 0x52024, 3: 0x52024, 4: 0x52024};
 const ATTR = {1: 0xFAF4, 2: 0xF8F4, 3: 0xFCF4, 4: 0xFEF4};   // tile attributes (word per tile, seg2)
 const STAGES = 0x30B70E;                                      // per stage {x.W, y.W, level table.L} ($2DCE44)
+const ITEMS = {at: 0x16E68, chip: 0x1EDA4};                   // item bank: raw file on disk 2, its chip address ($30CD58)
 
 const hex = v => v.toString(16);
 const find = (b, pat, from = 0, to = b.length) => {
@@ -25,7 +26,7 @@ const rfind = (b, pat, from, to) => {
 const bytes = s => s.match(/../g).map(x => parseInt(x, 16));
 const cstr = b => { const i = b.indexOf(0); return String.fromCharCode(...(i < 0 ? b : b.subarray(0, i))); };   // latin1
 
-function hunkData(adf, at) {
+export function hunkData(adf, at) {
   const dv = new DataView(adf.buffer, adf.byteOffset, adf.byteLength);
   if (dv.getUint32(at) !== 0x3F3 || dv.getUint32(at + 4) || dv.getUint32(at + 8) !== 1) throw new Error(`no one-hunk file at $${hex(at)}`);
   if ((dv.getUint32(at + 24) & 0x3FFFFFFF) !== 0x3EA) throw new Error(`no HUNK_DATA at $${hex(at + 24)}`);
@@ -37,17 +38,19 @@ export function stageMemory(disks, n) {
   fast.set(seg1, MAIN.bases[0] - FB); chip.set(seg2, MAIN.bases[1]);
   const hunk = hunkData(disks[2], HUNK[n]), base = BASE[n];
   chip.set(hunk, base);
+  chip.set(readFile(disks[2], ITEMS.at), ITEMS.chip);              // item BOBs, shared by every stage
   const lev = readFile(disks[2], LEV[n]), ld = new DataView(lev.buffer, lev.byteOffset);
   const w = ld.getUint16(10) * ld.getUint16(14), h = ld.getUint16(12) * ld.getUint16(16);
   const fv = new DataView(fast.buffer), set = (a, v) => fv.setUint32(a - FB, v);
   set(0x30CD14, fv.getUint32(STAGES + 8 * (n - 1) + 4 - FB));   // level table
   set(0x30CD98, base);                                             // area data
   set(0x30CBA2, base + new DataView(hunk.buffer, hunk.byteOffset).getUint32(4));   // start area
+  set(0x30CD58, ITEMS.chip);                                       // item bank
   fv.setUint16(0x30CAA2 - FB, w);                                  // A4+$22: map width
   return {chip, fast, base, w, h, map: lev.subarray(18)};
 }
 
-function reader({chip, fast}) {
+export function reader({chip, fast}) {
   const cv = new DataView(chip.buffer), fv = new DataView(fast.buffer);
   const rd = (a, k) => a < FB ? chip.subarray(a, a + k) : fast.subarray(a - FB, a - FB + k);
   return {rd, B: a => rd(a, 1)[0], L: a => a < FB ? cv.getUint32(a) : fv.getUint32(a - FB),

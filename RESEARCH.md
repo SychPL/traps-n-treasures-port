@@ -1454,3 +1454,17 @@ zgoda prawowitych właścicieli.
   +$54 = kolor na 4 linie, rysowany [k, poprzedni, k, k]; okno linii, linia wody, 2 kolory lustra i tlo pod woda $003
   to stale pomiarowe (RECIPE). Strona zapisuje etapy (kafle, mapy, tabele) tylko z obiema dyskietkami; 4 oryginalne
   etapy z grafika pakietu demo przechodza test 4000 klatek losowych klawiszy.
+- Ekstraktor, obiekty etapow (`extractor/objects.js`): listy rekordow z glownego programu, bank przedmiotow z dysku 2
+  ($16E68, bez kompresji, w chip pod $1EDA4, zmienna $30CD58), opisy typow, animacje, teksty i emitery kropli jak w
+  `work/export_objects.py`: level{n}_objects.json zgodne w 4 etapach, atlasy piksel w piksel poza
+  level4_objects_water.png. Paleta podwodna z reguly: CHR! z odcieniem, kolor 1 = tlo wody, kolory 2 i 3 bez odcienia -
+  copper (etap 1) barwi je tylko na 2 liniach lustra pod linia wody, nizej przywraca. W zrzucie lvl4_a copper zeruje
+  kolory 16-31 od linii 191 (i 2-3 od 207), wiec eksport level4_*_water.png wyszedl czarny; gracz tez uzywa 16-31,
+  wiec to raczej lista coppera w trakcie przebudowy - do sprawdzenia w emulatorze pod woda w etapie 4. Strona zapisuje
+  obiekty razem z kaflami, mapami i tabelami; 4 etapy z dysku z grafika gracza/HUD z pakietu demo przechodza test
+  4000 klatek.
+- Gracz pod woda byl bez odcienia: `export_player.py` i `export_sword.py` braly palety ze zrzutu lvl1_g, gdzie linia 143
+  (woda etapu 1) jest jeszcze nad woda - player_water.png i sword_water.png byly identyczne z _surface. Copper barwi
+  kolory 16-31 (sprite'y) pod woda (kolor 16: $EC1 -> $CA3), wiec palety teraz z lvl1_h; player_water.png i
+  sword_water.png wyeksportowane od nowa (player_surface bez zmian). Ekstraktor (`extractor/player.js`, hunk danych z
+  dysku 2 $940C = bank $131A4) daje to samo piksel w piksel.
