@@ -1594,3 +1594,22 @@ zgoda prawowitych właścicieli.
     (klatka 8 / 37, 1599), nie cios z postawy.
   - Skok z liny w klatce, w ktorej stopy schodza na podloge (zejscie po linie na kolce): klatka skoku 4 / 33 od razu
     (1874, rndbR3oc 4959) - wczesniej zostawala klatka liny z galezi ladowania.
+- Okienko tekstu (rndbC4oc, tablica "Passage to the lower tunnels^Entry at your own risk!" w C2; zrzuty ekranu emulatora
+  `work/probe_shots.js` - BOB-y gracza i wrogow nie trafiaja do bufora, ramka okienka tak): '^' konczy strone, nie
+  tylko wiersz - petla rysowania ($2E403E) przy $5E skacze do czekania na FIRE ($2E40CA), zwykle zawiniecie wiersza idzie
+  przez $2E40BA (wiersz co 10 px). Strona 1 to dwa wiersze ze strzalka, FIRE (1921) daje strone 2, dopiero kolejne FIRE
+  (2002) zamyka. Po zamknieciu ramka jest jeszcze w klatce po FIRE, a joystick wraca 2 klatki pozniej (ruch od 2005;
+  wczesniej port ruszal w tych klatkach - pl.atDoor.after zastapione stanem msg przez 2 klatki, game.msgAfter).
+  Pisanie 1 litera na klatke potwierdzone (28 liter strony 1 w 28 klatek). Wynik: rndbC4oc zgodne co do klatki (300 -> 0),
+  pozycja tylko 3 klatki (artefakt klatki przed UP).
+- Drzwi / kafel akcji przy zablokowanym UP (rndbI4oc 2011: skok z trzymanym UP konczy sie na kaflu akcji): obsluga UP
+  przy drzwiach, klatce i kaflu ($2E98A6 / $2E98D6 / $2E9900) przy $30CC8E pomija obrot tylem ($2E99A4), wskaznik chodu
+  na srodek i wysrodkowanie x; drzwi i kafel ustawiaja dalej $2EB213 / $2EB214 (FIRE dziala), klatka nic. Ta sciezka
+  ($2E988C) zeruje tez licznik postoju $2EB224 jak kierunek - klatka skoku 4 zostaje w poslizgu, poki trzymany UP.
+  Port: pl.latch w doorCheck (pl.doorNoTurn dla FIRE), doorUp kasuje idleDone. rndbI4oc zgodne co do klatki.
+- Puszczenie DOWN w podrzucie z czolgania przy scianie (rndbCoc 4827, sonda $9DD4 / $30B8AE / $2F184C): w locie z
+  DOWN+RIGHT pod sciane kierunek co klatke ustawia skrypt spadania ($2E933A -> $2EB1DC, klatka 88), choc ruch przed
+  joystickiem wchodzi w sciane i $2E8EBC przy $9DD4 ustawia skrypt stojacego czolgania. W klatce bez joysticka zostaje
+  ten drugi (18), a koniec czolgania ($2E8B7E: brak DOWN, bez $2EB217) zeruje $9DD4 i stan dopiero po nim; postoj w
+  spadaniu pominiety ($30CC59), wiec 18 trwa w locie az do kierunku (14 klatek). Port: pl.hitRaw (sciana z ruchu),
+  pl.airCrawlStop. rndbCoc zgodne w calosci.

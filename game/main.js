@@ -549,13 +549,13 @@ function action(up, landing0) {
   // $2EB213 / $2EB214 zyja tylko w klatce obslugi UP (koniec joysticka $2E8E9E je kasuje) - FIRE bez UP to cios
   // (emulator 4x, L3: tylem do zamka, puszczenie UP, FIRE)
   const ar = L.areas && L.areas[L.areaId], t = ((pl.y - 6) >> 4) * L.w + (pl.x >> 4);
-  if (ar && (pl.ground || landing0) && pl.atDoor && up) {
-    const A = pl.atDoor; pl.atDoor = null;
+  if (ar && (pl.ground || landing0) && (pl.atDoor || pl.doorNoTurn) && up) {
+    const A = pl.atDoor || pl.doorNoTurn, back = pl.atDoor ? A : null; pl.atDoor = null;   // bez obrotu (UP z blokada) poza zostaje
     if (A.cage) { const c = cageAt(); return c ? freeCage(c, A) : true; }
-    if (A.action) { actionCheck(); pl.atDoor = A; return true; }   // $2E9E4A ($2EB214): akcja na FIRE, gracz dalej tylem
-    if (keyhole()) { pl.atDoor = A; return true; }
+    if (A.action) { actionCheck(); pl.atDoor = back; return true; }   // $2E9E4A ($2EB214): akcja na FIRE, gracz dalej tylem
+    if (keyhole()) { pl.atDoor = back; return true; }
     const d = ar.doors.find(d => d.tile === t || d.tile + 1 === t);
-    if (d) { enterDoor(d); pl.atDoor = A; }               // w klatce FIRE i przy wygaszaniu gracz zostaje tylem (emulator)
+    if (d) { enterDoor(d); pl.atDoor = back; }               // w klatce FIRE i przy wygaszaniu gracz zostaje tylem (emulator)
     return true;                                         // wejscie bez drzwi w tablicy: nic, bez ciosu ($2DF550)
   }
   return false;
@@ -582,27 +582,31 @@ const ACCENT = {'ą': 'ao', 'ć': 'ca', 'ę': 'eo', 'ł': 'ls', 'ń': 'na', 'ó'
   'Ą': 'Ao', 'Ć': 'Ca', 'Ę': 'Eo', 'Ł': 'Ls', 'Ń': 'Na', 'Ó': 'Oa', 'Ś': 'Sa', 'Ź': 'Za', 'Ż': 'Zd'};   // polskie: litera + znak
 const glyph = ch => L.msgFontMap.glyphs[((ACCENT[ch] || ch)[0]).charCodeAt(0) - 0x21];
 const glyphW = ch => ch === ' ' ? 5 : (glyph(ch) ? glyph(ch)[1] + 1 : 5);
+// '^' konczy strone ($2E4048 -> $2E40CA: czekanie na FIRE), nie tylko wiersz (emulator 4x, rndbC4oc: tablica przy zejsciu)
 function message(text) {
-  const t = (LANG.texts && LANG.texts[text]) || text, lines = [];
-  const limit = () => lines.length % 4 === 3 ? 150 : 160, width = s => [...s].reduce((n, c) => n + glyphW(c), 0);
+  const t = (LANG.texts && LANG.texts[text]) || text, width = s => [...s].reduce((n, c) => n + glyphW(c), 0);
+  game.msgPages = [];
   for (const par of t.split('^')) {
+    const lines = [], limit = () => lines.length % 4 === 3 ? 150 : 160;
     let line = '';
     for (const w of par.split(' ')) {
       const next = line ? line + ' ' + w : w;
       if (line && width(next) > limit()) { lines.push(line); line = w; } else line = next;
     }
     lines.push(line);
+    for (let i = 0; i < lines.length; i += 4) game.msgPages.push(lines.slice(i, i + 4));
   }
-  game.msgPages = [];
-  for (let i = 0; i < lines.length; i += 4) game.msgPages.push(lines.slice(i, i + 4));
-  game.msgShown = 0; game.msgT = 0; game.msgPose = 0; game.state = 'msg';
+  game.msgShown = 0; game.msgT = 0; game.msgPose = 0; game.msgAfter = 0; game.state = 'msg';
 }
 // przycisk: nastepna strona tekstu albo koniec (w trakcie pisania: cala strona)
-// poza tylem do drzwi / kafla akcji biegnie dalej (skrypt w przerwaniu) i zostaje jeszcze 2 klatki po zamknieciu (emulator 4x, I4)
+// poza tylem do drzwi / kafla akcji biegnie dalej (skrypt w przerwaniu); po zamknieciu petla okienka ($2E411C) trwa jeszcze
+// 2 klatki bez obslugi joysticka - ruch dopiero potem (emulator 4x, I4, rndbC4oc)
 function msgInput(press) {
   pl.anim++; if (pl.atDoor) pl.frame = doorPose();
+  if (game.msgAfter > 0) { if (--game.msgAfter <= 0) { game.msgPages = []; game.state = null; } return; }   // ramka jeszcze w klatce po FIRE
   if (press && game.msgShown < game.msgPages[0].join('').length) game.msgShown = 1e9;
-  else if (press) { game.msgPages.shift(); game.msgShown = game.msgT = 0; if (!game.msgPages.length) { game.state = null; pl.latch = pl.fireLatch = true; if (pl.atDoor) pl.atDoor.after = 2; } }
+  else if (press && game.msgPages.length > 1) { game.msgPages.shift(); game.msgShown = game.msgT = 0; }
+  else if (press) { game.msgAfter = 2; pl.latch = pl.fireLatch = true; }
 }
 // napisy sklepu (emulator): odstep 6 px zamiast 5 jak w okienkach wiadomosci
 const msgW = s => [...s].reduce((n, c) => n + (c === ' ' ? 6 : glyphW(c)), 0);
@@ -1382,16 +1386,21 @@ function levelClear() {
 // UP na kaflu z bitem 4 atrybutu (pod graczem, y - 6: $2E95AA / $2F0A5C) obraca gracza tylem do drzwi (klatki 85 albo 84,
 // potem 86 co 6, tablica $2EB1E4) i ustawia $2EB213; wejscie dopiero na FIRE (action). Ruch w bok albo skok konczy obrot
 function doorCheck(UP, landing0) {
+  pl.doorNoTurn = null;
   if (!UP || game.treasure) { pl.doorLatch = false; return false; }
   const ar = L.areas && L.areas[L.areaId];
   // ze skrzynia w rekach UP przy drzwiach / klatce to skok ($2E98A6 / $2E98D6 -> $2E9818); obrot zeruje wskaznik chodu
   if (pl.doorLatch || !ar || !(pl.ground || landing0) || game.carry) return false;   // ladowanie z profilu przed joystickiem tez (emulator 4x, R3)
-  if (attr(pl.x, pl.y - 6) & ENTRANCE) { pl.doorLatch = true; if (!pl.atDoor) { pl.atDoor = {t: pl.anim}; pl.wp = null; } return true; }
+  // UP z blokada $30CC8E (trzymany od skoku albo spadania): bez obrotu i wysrodkowania, ale drzwi i kafel akcji dalej na
+  // FIRE ($2E98B0 -> $2E98CE: $2EB213, $2E990A -> $2E9936: $2EB214; klatka bez flagi) - emulator 4x, rndbI4oc
+  const turn = A => {
+    if (pl.latch && !pl.atDoor) { if (!A.cage) pl.doorNoTurn = A; return true; }
+    pl.doorLatch = true; if (!pl.atDoor) { if (A.action) pl.x = (pl.x & ~15) + 7; pl.atDoor = A; pl.wp = null; } return true;   // $2E9918: wskaznik chodu na srodek
+  };
+  if (attr(pl.x, pl.y - 6) & ENTRANCE) return turn({t: pl.anim});
   const cg = cageAt();
-  if (cg) { pl.doorLatch = true; if (!pl.atDoor) { pl.atDoor = {t: pl.anim, cage: cg}; pl.wp = null; } return true; }
-  if (L.actions && attr(pl.x, pl.y - 22) & ACTION) {      // $2E95D4 -> $2E9906: kafel akcji (bit 6, wiersz nad), x na srodek
-    pl.doorLatch = true; if (!pl.atDoor) { pl.x = (pl.x & ~15) + 7; pl.atDoor = {t: pl.anim, action: true}; pl.wp = null; } return true;   // $2E9918: wskaznik chodu na srodek
-  }
+  if (cg) return turn({t: pl.anim, cage: cg});
+  if (L.actions && attr(pl.x, pl.y - 22) & ACTION) return turn({t: pl.anim, action: true});   // $2E95D4 -> $2E9906: kafel akcji (bit 6, wiersz nad), x na srodek
   return false;
 }
 // przejscie ($2DF568): dzingiel 3, plansza wygasa przez 16 klatek ($2DFBCA, 1 krok palety na klatke), potem sklep / ciemnosc /
@@ -2094,7 +2103,7 @@ function wallBlocked(dx) {
 function moveX(dx) {
   const s = Math.sign(dx);
   if (wallBlocked(dx) || Actors.gateDir(pl.x, pl.y, playerBox()) === s) {
-    pl.vx = 0; pl.fx = 0; pl.wp = null;
+    pl.vx = 0; pl.fx = 0; pl.wp = null; pl.hitRaw = s;
     const cx = pl.x + (s > 0 ? 10 : -9);                 // $2F4546: sciana-skrzynia ustawia $9F1C (FIRE ja podnosi), zwykla go nie zmienia
     if (L.crates && !pl.water && !pl.jump && !game.carry && L.map[(pl.y >> 4) * L.w + (cx >> 4)] === L.crates.tile) pl.crateBlock = true;
     // postoj klatke pozniej ($2F4554 przy ruchu nastepnej klatki): w tej klatce zwykla obsluga kierunku (chod dalej, po
@@ -2106,7 +2115,7 @@ function moveX(dx) {
   pl.crateBlock = false;                                 // $2F44FE: ruch bez sciany kasuje $9F1C
   for (let i = 0; i < Math.abs(dx); i++) {
     // niesiona skrzynia nie ma wlasnej sondy sciany (emulator, poziom 3: gracz idzie dalej, skrzynia nad schodami)
-    pl.x += s;
+    pl.x += s; pl.hitRaw = 0;
     if (pl.wallStand) { pl.wallStand = 0; pl.cycle = null; }   // sciana sie skonczyla (np. po skoku): chod od poczatku (emulator, poziom 2)
   }
 }
@@ -2268,6 +2277,10 @@ function update() {
   // chwyt liny z czolgania: stan 3 trwa, puszczenie DOWN daje stan 0 ($2E8B78), nie 6 - cios z tablicy ziemi az do
   // wejscia w tryb wspinaczki (emulator 4x, R3)
   if (!pl.rope || pl.ropeClimb) pl.ropeSt0 = false; else if (crawlSt0 && !DOWN) pl.ropeSt0 = true;
+  // stan 3 w powietrzu przy scianie: ruch (przed joystickiem) wchodzi w sciane i $2E8EBC przy $9DD4 ustawia skrypt
+  // stojacego czolgania, koniec czolgania ($2E8B7E) zeruje $9DD4 dopiero potem; bez kierunku nic go nie zmienia
+  // (spadanie pomija postoj) - klatka 18 / 47 w locie do kierunku albo ladowania (emulator 4x, rndbCoc 4827)
+  if (H0 || onFoot || pl.water || pl.climb) pl.airCrawlStop = false; else if (crawlSt0 && !pl.crawl && pl.hitRaw) pl.airCrawlStop = true;
   if (pl.crawl) pl.crawlSt = game.crawled = true; else if (onFoot || pl.water || pl.climb || pl.jump || !DOWN) pl.crawlSt = false;   // puszczenie DOWN konczy go tez w powietrzu, sam kierunek nie (emulator 4x, L2: $9DD4 trwa z DOWN)
   // $2E9B26 w obsludze DOWN: pierwsza klatka o 1 dluzej (emulator: 6 przy opoznieniu 5); zaraz po ladowaniu ze spadania 5
   // po spadaniu: pierwsza klatka 5, gdy stan 1 / 3 trwal z ziemi przez spadanie, 6 przy DOWN wcisnietym w powietrzu (emulator 4x)
@@ -2296,7 +2309,8 @@ function update() {
   const chuteGo = UP && inAir && pl.chuteWin > 0 && !pl.chute;   // wlaczany na koncu klatki (UP po ruchu tej klatki)
   // drabina, drzwi, klatka i kafel akcji tylko bez kierunku: obsluga UP pomija je, gdy kierunek juz ustawil d7 ($2E9592);
   // UP przed FIRE ($2E8B40): UP+FIRE przy drzwiach / kaflu akcji = obrot i akcja, bez ciosu (emulator 4x, I4)
-  if (doorCheck(UP && !upDead && !H0 && !lock, landing0)) { pl.latch = true; pl.swimDir = 0; }   // $2E99B0; w blokadzie ciosu ($30CC63) obsluga UP pominieta - obrot dopiero po niej (emulator 4x, D4)                  // gora przy drzwiach = obrot do drzwi, nie skok
+  const doorUp = doorCheck(UP && !upDead && !H0 && !lock, landing0);
+  if (doorUp) { pl.latch = true; pl.swimDir = 0; }   // $2E99B0; w blokadzie ciosu ($30CC63) obsluga UP pominieta - obrot dopiero po niej (emulator 4x, D4)                  // gora przy drzwiach = obrot do drzwi, nie skok
   if (FIRE && !pl.fireLatch && !pl.attack && !pl.climb && action(UP && !upDead && !H0, landing0)) pl.fireLatch = true;
   const crateDrop = game.carry && !FIRE;               // $2E8BA8 -> $2EA840: odstawienie po ruchu poziomym tej klatki
   if (game.crateGhost > 0) game.crateGhost--;
@@ -2376,8 +2390,7 @@ function update() {
   // UP w spadaniu ($30CC59, tez w profilu podrzutu - obsluga spadania dziala i wtedy) zapala blokade $30CC8E ($2E9588):
   // po ladowaniu z trzymanym UP bez skoku (emulator, poziom 2)
   if (UP && !pl.ground && !pl.jump && !pl.jumpReq && !pl.water && !pl.climb && !pl.plat && !floorAt(pl.x, pl.y + 1)) pl.latch = true;
-  if (pl.atDoor?.after > 0) pl.atDoor.after--;
-  else if (pl.atDoor && (dir || pl.crouch || !(pl.ground || landing0) || !UP || pl.atDoor.hold !== undefined && pl.atDoor.hold-- <= 0)) pl.atDoor = null;   // emulator: puszczenie UP konczy poze tylem (FIRE wtedy to cios)
+  if (pl.atDoor && (dir || pl.crouch || !(pl.ground || landing0) || !UP || pl.atDoor.hold !== undefined && pl.atDoor.hold-- <= 0)) pl.atDoor = null;   // emulator: puszczenie UP konczy poze tylem (FIRE wtedy to cios)
   const JUMP = UP && !upDead && !pl.latch && !pl.lowCeil && !lock && !game.bonusWait;   // $2E9818: bez skoku w czasie odliczania do pokoju premii
   const jumpNow = pl.jumpReq; pl.jumpReq = false;
   // wyskok z wody ($2E953E): przed ruchem poziomym, od razu bez flagi wody (tablica chodu zwykla w tej klatce)
@@ -2456,7 +2469,7 @@ function update() {
   }
   // $2EB224: postoj obslugiwany raz (na ladzie poza skokiem i spadaniem, w wodzie opoznienie 8 - swimFrame) - zeruje go
   // kazdy kierunek i skok
-  if (dir) pl.idleDone = false;
+  if (dir || doorUp) pl.idleDone = false;           // UP przy drzwiach / kaflu akcji ($2E988C) tez zeruje $2EB224
   else if ((pl.ground || landing0 || pl.lift?.spike && !pl.jump && !pl.rope && pl.liftI < (pl.hopStart ?? 2)) && !pl.water && !pl.jumpReq && (pl.wp0 ?? pl.wc0) === pl.wc0) { pl.idleDone = true; pl.swimDir = 0; }   // postoj ($2E8E46); start podrzutu z kolcow bez skoku: postoj tez (emulator 4x, C2)   // ladowanie bez ruchu: postoj juz w tej klatce
   const x0 = pl.x;
   let d; [d, pl.fx] = step(pl.vx, pl.fx); if (d) moveX(d);
@@ -2809,6 +2822,7 @@ function animate(dir) {
   else if (pl.water && pl.y > L.waterY - 8) f = swimFrame(dir);
 
   else if (pl.atDoor) f = doorPose();   // tylem do drzwi
+  else if (pl.airCrawlStop && !pl.ground) f = R ? 18 : 47;
   else if (pl.lockT > 0 && pl.lift?.spike) f = pl.crouchSt ? (R ? 2 : 31) : R ? 0 : 29;   // cios na starcie podrzutu: do konca blokady $30CC63 obsluga spadania stoi - poza postoju (emulator 4x, L2); po ciosie w kucki kucanie (rndbR4oc)
   else if (!pl.ground && !((hopG || pl.liftFloor) && !pl.jump) || pl.jumpReq) f = pl.jump || pl.jumpReq || pl.jumpScript ? (RA ? 4 : 33) : (RA ? 88 : 87);   // przerwa przed podrzutem z kolcow: jeszcze na ziemi   // caly skok 4/33 ($2EB174, od klatki wcisniecia), spadanie 88/87 ($2EB1DC)
   else if (pl.jumpPose && !dir && (pl.ground || hopG) && !pl.idleDone) f = R ? 4 : 33;   // po skoku bez kierunku klatka skoku zostaje w poslizgu, az postoj ($2E8D3A) ja zmieni (emulator)
