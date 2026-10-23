@@ -1538,3 +1538,24 @@ zgoda prawowitych właścicieli.
   czarnym tle (reczne poszerzenie z eksportu zostaje w prywatnych assetach). Silnik nie laduje juz island.png (nigdy
   nie byl rysowany). Ekstraktor daje teraz komplet: 107 plikow, gra z repo publicznego + wlasne dyskietki nie siega do
   pakietu demo; test awaryjny daje te same wyniki co na wyeksportowanych assetach.
+- Zwrot w wodzie (rndb13oc od 1625, klatki): obsluga kierunku ($2E9146 / lustrzana) ustawia flage chodu tylko, gdy nie
+  byla ustawiona ($2EB20D = lewa, $2EB20E = prawa), a w wodzie wybiera skrypt wg znacznika $2EB222 (4 = lewo, 0 = prawo;
+  `adda.w $2EB222, a0` w $2E8FF6): zgodny z nowym kierunkiem -> plywanie $2EB1BC, inny -> zwrot $2EB1CC. Sonda w emulatorze
+  (zapis $2EB222 i flag co klatke, 1700/1700 klatek jak nagranie): $2EB222 zmienia kazdy kierunek, takze w powietrzu
+  (flagi bez zmian) i w wodzie przy ustawionej juz fladze. Przypadek: chod w lewo na ladzie (flaga lewa), skok/spadanie
+  z RIGHT (znacznik prawo, flaga lewa zostaje), w wodzie LEFT (znacznik lewo, flaga juz jest - skrypt bez zmian), potem
+  RIGHT: flaga prawa nowa, znacznik lewo -> zwrot 92/91/96. Port porownuje teraz z pl.face0 (zwrot z poczatku klatki =
+  $2EB222 przed obsluga kierunku) zamiast ze zwrotem skryptu plywania; regresja: rndb13oc zgodne, reszta bez zmian.
+  Odrzucone proby: zwrot przy przeciwnej fladze (psuje rnd24oc / rndb8oc / rndb16oc), osobny znacznik ustawiany razem
+  z flaga (9 nowych roznic) - znacznik nie zalezy od flag.
+- UP+FIRE przy czolganiu poza krawedz (rndb14oc): skok tylko z podloga pod stopami jak w samym skoku ($2E988E) - bez
+  niej UP+FIRE w pierwszej klatce spadania to spadanie bez ciosu (warunek upJump: `pl.ground && (floorAt || pl.plat)`
+  albo podloga podrzutu z kolcow).
+- Stan 1 w locie podrzutu z kolcow (rndb14oc 4302, nagranie 4x): obsluga DOWN ($2E9AD6) i kierunkow ($2E92FC /
+  lustrzana) przy fladze skoku $30CC54 wychodzi przed zmiana stanu $30B8AE (DOWN: tylko okno $2EB13C, kierunek: skrypt
+  lotu $2EB174), wiec kucniecie ze startu podrzutu trwa przez lot mimo kierunku. Ladowanie na kolcach z DOWN w stanie 1
+  - bez nowego skryptu kucania ($2E9C34), poza 0 (port: crouchSt nie konczy kierunek w locie podrzutu, dalej st1Land).
+  Czolganie po takim ladowaniu startuje od nowa jak po skoku (pierwsza klatka 6, rndbC3oc 575-580): pl.hopSt wylacza
+  regule "stan 1 z ziemi przez spadanie = 5". Regresja: rndb14oc zgodne, fullCheck i ocCheck bez innych zmian.
+  Odrzucone: brak kucania na calym podrzucie / w klatkach 0-1 podrzutu (7 nowych roznic - kucniecie ze startu jest
+  w wiekszosci nagran).

@@ -179,6 +179,17 @@ window.dbgRnd = async (name, a, b, extra = "''") => {
   const rows = []; for (let i = a; i < b; i++) rows.push(i + ' [' + inp[i] + '] emuF ' + E[i][4] + ' emuPos ' + E[i + 1].slice(2, 4) + ' | port ' + P[i].join(' '));
   return rows.join('\n');
 };
+// cale nagranie: pred(i, wejscie, klatka emulatora, [x, y, klatka, extra] portu) -> wiersz albo null (szukanie przypadkow)
+window.scanRnd = async (name, extra, pred) => {
+  setRespawn(name);
+  const [lvl, seed, total] = RND[name], [frame0, phase] = SNAPPH[LVLSNAP[lvl]], S = Object.assign(rndSeq(seed, total), {invuln: true, frame0, phase});
+  const E = await (await fetch('/work/dumps/' + name + '.json', {cache: 'no-store'})).json();
+  const src = runSeq.toString().replace("tr.push([Math.round(cam.x) - 48, Math.round(cam.y) - 48, pl.x, pl.y]);", "tr.push([pl.x, pl.y, pl.frame, " + extra + "]);");
+  const P = await eval('(' + src + ')')(lvl, S);
+  const inp = []; for (const [n, h] of S) for (let i = 0; i < n; i++) inp.push(h.join('+'));
+  const out = []; for (let i = 0; i < Math.min(E.length - 1, P.length, inp.length); i++) { const r = pred(i, inp[i], E[i][4], P[i]); if (r) out.push(r); }
+  return out;
+};
 // pierwsza roznica klatek nagrania z otoczeniem (dbgRnd)
 window.nextDiff = async (name, extra, before = 8, after = 10) => {
   const r = await cmpRnd(name), ff = parseInt(r.split('klatki ')[1].split(' od ')[1]);

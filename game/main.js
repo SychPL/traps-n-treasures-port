@@ -2272,7 +2272,7 @@ function update() {
   // $2E9B26 w obsludze DOWN: pierwsza klatka o 1 dluzej (emulator: 6 przy opoznieniu 5); zaraz po ladowaniu ze spadania 5
   // po spadaniu: pierwsza klatka 5, gdy stan 1 / 3 trwal z ziemi przez spadanie, 6 przy DOWN wcisnietym w powietrzu (emulator 4x)
   pl.crawlNew = pl.crawl && !crawl0;
-  if (pl.crawl && !crawl0) { pl.anim = pl.wasAir && !landing0 && !pl.landJump && (crawlSt0 || pl.crouchSt) ? -1 : -2; pl.wallStand = 0; pl.wallSkip = !crawlSt0; }   // sciana dla kroku z tej klatki dopiero w ruchu nastepnej ($2F4554): pierwsza klatka czolgania jej nie liczy (emulator 4x, L2: 14, 14, 18)   // po ladowaniu ze spadania 5, ze skoku 6 (emulator, poziomy 2 i 4)
+  if (pl.crawl && !crawl0) { pl.anim = pl.wasAir && !landing0 && !pl.landJump && (crawlSt0 || pl.crouchSt && !pl.hopSt) ? -1 : -2; pl.wallStand = 0; pl.wallSkip = !crawlSt0; }   // sciana dla kroku z tej klatki dopiero w ruchu nastepnej ($2F4554): pierwsza klatka czolgania jej nie liczy (emulator 4x, L2: 14, 14, 18)   // po ladowaniu ze spadania 5, ze skoku 6 (emulator, poziomy 2 i 4)
   // koniec czolgania ($2E8B7E) jest po obsludze kierunku: z kierunkiem w tej klatce jeszcze skrypt czolgania, chod od nastepnej
   // bez kierunku i DOWN tez klatka czolgania jeszcze raz, gdy wskaznik chodu poza srodkiem (krok do srodka, postoj $2E8D3A
   // dopiero w srodku - emulator 4x, L3: 47, potem 29); z samym DOWN od razu kucanie
@@ -2308,7 +2308,8 @@ function update() {
   if (pl.ground || pl.climb || pl.water) pl.jumpScript = false;
   if (!FIRE) pl.stomp = false;
   // UP jest obslugiwane przed FIRE ($2E8B40 -> $2E9C82): UP i FIRE naraz na ziemi = skok i poza ciosu w powietrzu (emulator)
-  const upJump = UP && !upDead && !pl.latch && !pl.lowCeil && !lock && (pl.ground || hopFloor) && !pl.water && !pl.climb && !pl.jumpReq && (H0 || !(attr(pl.x, pl.y - 8) & LADDER)
+  // podloga jak przy samym skoku ($2E988E): czolganie poza krawedz z UP+FIRE to spadanie, bez ciosu (emulator 4x, rndb14oc)
+  const upJump = UP && !upDead && !pl.latch && !pl.lowCeil && !lock && (pl.ground && (floorAt(pl.x, pl.y + 1) || pl.plat) || hopFloor) && !pl.water && !pl.climb && !pl.jumpReq && (H0 || !(attr(pl.x, pl.y - 8) & LADDER)
     && !(attr(pl.x, pl.y - 6) & ENTRANCE) && !cageAt() && !(L.actions && attr(pl.x, pl.y - 22) & ACTION)) && !ropeAt()
     || UP && !lock && !upDead && pl.water && pl.y <= L.waterY + 2;   // wyskok z wody ($2E953E -> $2E9818) tez przed FIRE
   const stompNow = FIRE && !pl.fireLatch && (airborne && !landing0 && (pl.jump || pl.jumpScript) || pl.jumpReq || upJump) && !pl.chute;   // $2E9EC4: skrypt ciosu w dol juz z nowym zwrotem; $30CC54 juz od zgloszenia skoku (emulator 4x, L1: FIRE klatke po skoku ze szczytu drabiny)
@@ -2420,8 +2421,9 @@ function update() {
   // klatce tez - cios w kucki po puszczeniu DOWN)
   // stan 1 trwa tez w powietrzu (postoj $2E8D3A tylko na ziemi): kucanie, zsuniecie z krawedzi z DOWN i ladowanie z DOWN
   // - po ladowaniu bez nowego skryptu kucania, poza postoju 0 / 29 (emulator 4x, L2)
-  if (!pl.crouch && (H0 && !lock || pl.climb || pl.crawl || pl.water || pl.jump || pl.jumpReq || onFoot && !(pl.lockT > 0 || pl.throwT > 0) && (pl.wp ?? WT0) === WT0)) pl.crouchSt = false;
+  if (!pl.crouch && (H0 && !lock && !(pl.lift?.spike && !hopFloor) || pl.climb || pl.crawl || pl.water || pl.jump || pl.jumpReq || onFoot && !(pl.lockT > 0 || pl.throwT > 0) && (pl.wp ?? WT0) === WT0)) pl.crouchSt = false;
   if (!pl.crouchSt || !DOWN) pl.st1Land = false;
+  if (!pl.crouchSt || onFoot && !landing0 && !pl.lift) pl.hopSt = false; else if (pl.lift?.spike && !hopFloor) pl.hopSt = true;   // stan 1 przez lot podrzutu: czolganie po ladowaniu od nowa (6); na ziemi po klatce ladowania koniec
   // poziomo: start od razu 1 px/kl., potem +1/8 px/kl. do 2 px/kl. (emulator: 1,1,1,2,1,2,1,2,2...)
   const cur = currentAt();
   if (pl.water) walkTable('water');                      // $2F137E przy wejsciu do wody, $2F12CE przy wyjsciu
@@ -2728,7 +2730,9 @@ function swimFrame(dir) {
   // wpadniecie ($2EB1BC): skrypt ze zwrotem sprzed obslugi kierunku tej klatki - kierunek przeciwny od razu daje zwrot
   if (!pl.as || !pl.as.swim) { const f = (pl.face0 ?? pl.face) > 0 ? 1 : -1; animSet(SWIM_SEQ[f], 5); pl.as.swim = true; pl.swimFace = f; }
   if (dir && pl.swimDir !== dir) {
-    animSet((pl.swimFace === dir ? SWIM_SEQ : TURN_SEQ)[dir], 4); pl.as.swim = true;
+    // zwrot wg $2EB222 sprzed obslugi kierunku (face0: ustawia go kazdy kierunek, tez w powietrzu i w wodzie przy
+    // ustawionej fladze - sonda w emulatorze, rndb13oc), nie wg skryptu plywania
+    animSet(((pl.face0 ?? pl.swimFace) === dir ? SWIM_SEQ : TURN_SEQ)[dir], 4); pl.as.swim = true;
     pl.swimDir = pl.swimFace = dir;
   } else if (dir) pl.as.d = 4;                          // $2E9368: kierunek w wodzie co klatke ustawia opoznienie 4 (po postoju 8)
   else if (!dir && !pl.idleDone && (pl.wp0 ?? pl.wc0) === pl.wc0) { pl.as.d = 8; pl.idleDone = true; }   // wskaznik ze startu klatki (srodek tamtej tablicy)
