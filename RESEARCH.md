@@ -1613,3 +1613,30 @@ zgoda prawowitych właścicieli.
   ten drugi (18), a koniec czolgania ($2E8B7E: brak DOWN, bez $2EB217) zeruje $9DD4 i stan dopiero po nim; postoj w
   spadaniu pominiety ($30CC59), wiec 18 trwa w locie az do kierunku (14 klatek). Port: pl.hitRaw (sciana z ruchu),
   pl.airCrawlStop. rndbCoc zgodne w calosci.
+- Zwrot zawisu na linie (rndbR2oc 4369): obsluga kierunku na linie przy $30CC8E albo $2EB20B (DOWN z poprzedniej
+  klatki) idzie od razu do $2E920E - ustawia tylko znacznik $2EB222, skrypt zawisu zostaje ze starym zwrotem (65 mimo
+  DOWN+LEFT). Nowy zwrot daje dopiero sciezka zwrotu $2E9070 albo postoj na linie ($2E8E2E: tablica $2EB16C wg $2EB222);
+  po ciosie / rzucie skrypt wraca do zawisu z biezacym zwrotem. Port: pl.ropeHang (chwyt, cios, zwrot, postoj).
+  rndbR2oc zgodne w calosci (wczesniejsza proba z jednym zapamietanym zwrotem psula R2 / R3 - brakowalo ciosu i postoju).
+- Chwyt liny w klatce konca ciosu w dol (rndbR4oc 2935: FIRE puszczone, lina): koniec ciosu ustawia skrypt skoku
+  ($2E8BCC -> $2EB174), chwyt zostawia klatke biezacego skryptu - 4 / 33, nie 8 / 37.
+- Odrzucone: wskaznik chodu bez zerowania przy scianie (w grze $2F4562 kasuje tylko predkosc) - w porcie 111 nagran
+  z nowymi roznicami (model chodu portu zalezy od wp = null przy scianie); takze postoj przy scianie zaraz po
+  ladowaniu wg ostatniego zderzenia (rndbR3oc 2995) - stary hitRaw psul ~50 nagran (rozwiazanie nizej: zderzenie z samej klatki ladowania).
+- Chwyt liny w klatce, w ktorej FIRE w skoku zaczyna cios w dol (rndbR4oc 4356): obsluga FIRE jest przed chwytem
+  ($2F1170 po ruchu), wiec klatka chwytu to 8 / 37. Przejscie podrzutu z kolcow przez powierzchnie bloku w srodku lotu
+  w stanie 1 z DOWN (rndbC3oc 4096): bez skryptu kucania (st1Land, poza 0 / 29) jak przy ladowaniu; na starcie podrzutu
+  (liftI <= hopStart) kucanie dalej. rndbR4oc i rndbC3oc zgodne w calosci.
+- Nowe nagrania 4x rndb17-20oc (poziomy 1-4, ziarna 100041-100044, 5000 klatek): rndb17oc i rndb20oc zgodne od razu.
+- Samo DOWN w czolganiu pod niskim sufitem (rndb19oc 809, 852; sonda $2EB20D / $9DD4 / $2EB217): obsluga DOWN przy
+  $2EB217 ($2E9A3C) idzie od razu do $2E9C6A (d7 = 1) - flagi chodu i skrypt stojacego czolgania zostaja, a postoj z krokiem
+  wskaznika do srodka ($2E8D14) jest pominiety. Ponowny LEFT przy ustawionej fladze nie ustawia skryptu czolgania (47
+  zostaje), a faza naprzemiennych zderzen ze sciana trwa (zwrot RIGHT+FIRE: od razu +1 px). Port: wallStand bez zerowania
+  i walkDx pominiety w tej sytuacji.
+- Ladowanie przy scianie (rndb18oc 1000, rndbR3oc 2995, rndb19oc 1052): gra staje klatke po zderzeniu; zderzenie z ruchu
+  samej klatki ladowania (przed ladowaniem, bez ruchu w pionie) port gubil przez zerowanie wallStand przy ladowaniu.
+  Teraz zostaje (z wallHold) - postoj w nastepnej klatce; ladowanie z ruchem w pionie i zderzenie w kolejnych klatkach jak
+  dotad (wskaznik chodu z faza: prawo co 2 klatki, lewo co 3).
+- Spadochron w stanie 1 na kolce z UP (rndb18oc 3122): po ladowaniu postoj 0 / 29, choc bez DOWN (st1Land wymaga DOWN)
+  - pl.st1Chute do konca stanu 1. rndb19oc: odrodzenie po drugiej smierci klatke wczesniej (RND [41, 6, 46]); wszystkie
+  cztery nowe nagrania zgodne w calosci.

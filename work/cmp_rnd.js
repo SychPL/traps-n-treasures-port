@@ -43,7 +43,9 @@ window.RND = {rnd1_emu: [1, 101, 1500], rnd2_emu: [2, 202, 2000], rnd3_emu: [3, 
   rndb1oc_emu: [1, 100001, 5000], rndb2oc_emu: [2, 100002, 5000], rndb3oc_emu: [3, 100003, 5000], rndb4oc_emu: [4, 100004, 5000],
   rndb5oc_emu: [1, 100011, 5000], rndb6oc_emu: [2, 100012, 5000], rndb7oc_emu: [3, 100013, 5000], rndb8oc_emu: [4, 100014, 5000],
   rndb9oc_emu: [1, 100021, 5000], rndb10oc_emu: [2, 100022, 5000], rndb11oc_emu: [3, 100023, 5000, [[41, 7, 46]]], rndb12oc_emu: [4, 100024, 5000],
-  rndb13oc_emu: [1, 100031, 5000], rndb14oc_emu: [2, 100032, 5000], rndb15oc_emu: [3, 100033, 5000], rndb16oc_emu: [4, 100034, 5000]};
+  rndb13oc_emu: [1, 100031, 5000], rndb14oc_emu: [2, 100032, 5000], rndb15oc_emu: [3, 100033, 5000], rndb16oc_emu: [4, 100034, 5000],
+  rndb17oc_emu: [1, 100041, 5000], rndb18oc_emu: [2, 100042, 5000], rndb19oc_emu: [3, 100043, 5000, [[42, 6, 46], [41, 6, 46]]], rndb20oc_emu: [4, 100044, 5000],
+  rndb21oc_emu: [1, 100051, 5000], rndb22oc_emu: [2, 100052, 5000], rndb23oc_emu: [3, 100053, 5000], rndb24oc_emu: [4, 100054, 5000]};
 // odrodzenie w nagraniu 4x: etap wczytuje sie w 41-42 klatki od FIRE (A500: 61-62), obiekt gracza zerowany 6-7 klatek
 // przed polozeniem, sterowanie 46 klatek po odrodzeniu (A500: 63) - rozrzut 1 klatki; RND [3]: czas dla kazdej smierci albo
 // lista [czas, klatki 0, postoj] na kolejne smierci (fitRespawn), dalej 42 / 6 / 46

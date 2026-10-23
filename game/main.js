@@ -2103,7 +2103,7 @@ function wallBlocked(dx) {
 function moveX(dx) {
   const s = Math.sign(dx);
   if (wallBlocked(dx) || Actors.gateDir(pl.x, pl.y, playerBox()) === s) {
-    pl.vx = 0; pl.fx = 0; pl.wp = null; pl.hitRaw = s;
+    pl.vx = 0; pl.fx = 0; pl.wp = null; pl.hitRaw = s; pl.hitNow = true;
     const cx = pl.x + (s > 0 ? 10 : -9);                 // $2F4546: sciana-skrzynia ustawia $9F1C (FIRE ja podnosi), zwykla go nie zmienia
     if (L.crates && !pl.water && !pl.jump && !game.carry && L.map[(pl.y >> 4) * L.w + (cx >> 4)] === L.crates.tile) pl.crateBlock = true;
     // postoj klatke pozniej ($2F4554 przy ruchu nastepnej klatki): w tej klatce zwykla obsluga kierunku (chod dalej, po
@@ -2304,6 +2304,7 @@ function update() {
   // drabina / lina / woda i obsluga postoju po puszczeniu DOWN (wskaznik chodu w srodku, $2E8E8C)
   const WT0 = WALK_T[pl.wt || 'norm'].c;
   const crouchSt0 = pl.crouchSt;                       // stan 1 sprzed tej klatki (ladowanie w stanie 1)
+  if (hopFloor && pl.liftI > (pl.hopStart ?? 2) && crouchSt0 && DOWN) pl.st1Land = true;   // podrzut przez powierzchnie bloku w stanie 1: DOWN bez skryptu kucania, jak po ladowaniu (emulator 4x, rndbC3oc 4096)
   if (pl.crouch && !(attr(pl.x, pl.y + 1) & LADDER)) { if (!pl.crouchSt) { pl.chuteWin = 10; pl.swimDir = 0; } pl.crouchSt = true; }   // $2E9C54
   const upDead = UP && pl.chuteWin > 0 && !inAir && !lock; pl.upDead = upDead;   // w blokadzie ciosu obsluga UP pominieta: wybieg trwa (emulator, L2: cios w kucki z UP+FIRE)
   const chuteGo = UP && inAir && pl.chuteWin > 0 && !pl.chute;   // wlaczany na koncu klatki (UP po ruchu tej klatki)
@@ -2409,6 +2410,7 @@ function update() {
   if (pl.ropeCool > 0) pl.ropeCool--;                   // $2E8AFC
   let ropeJump = false;                                 // skok z liny: w klatce zgloszenia bez ruchu w bok (na linie kierunek nie czyta tablicy chodu)
   if (pl.rope) {
+    if (pl.lockT > 0 || pl.throwT > 0) pl.ropeHang = pl.face;   // po ciosie / rzucie zawis wg $2EB222
     const r = ropeAt();
     if (lock0) { /* cios / rzut z liny: joystick pominiety ($30CC63) - bez skoku i puszczenia (emulator 4x, R3) */ }
     else if (UP && !upDead && (!r || !pl.latch && dir)) { pl.rope = pl.climb = false; if (r) pl.ropeCool = 20; pl.jumpReq = pl.latch = ropeJump = true; pl.idleDone = false; Sfx.play('jump'); }
@@ -2421,10 +2423,10 @@ function update() {
     // w blokadzie ciosu ($30CC63) joystick pominiety; kierunek bez DOWN z poprzedniej klatki tez konczy tryb ($2E9070)
     const rd = DOWN ? 1 : UP && !upDead ? -1 : 0;
     if (pl.rope && !lock0) {
-      if (dir && !latch0 && !down0) pl.ropeClimb = pl.ropeAnim = false;
+      if (dir && !latch0 && !down0) { pl.ropeClimb = pl.ropeAnim = false; pl.ropeHang = dir; }   // $2E9070: skrypt zawisu z nowym zwrotem
       // stop profilu przy wejsciu z UP; kolce w tym samym takcie (w porcie koniec poprzedniej klatki) zaczynaja go po nim od nowa
       if (rd && !pl.ropeClimb) { pl.ropeClimb = true; pl.ropeAnim = !(pl.lockT > 0 || pl.throwT > 0); pl.ropeAnimDir = rd; pl.anim = -1; if (rd < 0 && !pl.spikeJust) pl.lift = null; }   // UP+FIRE: skrypt ciosu po skrypcie wspinaczki
-      else if (!UP && !DOWN && !(pl.lockT > 0 || pl.throwT > 0)) pl.ropeClimb = pl.ropeAnim = false;   // cios zaczety w tej klatce: bez postoju ($2E8D4E) - tryb trwa (emulator 4x, R3)
+      else if (!UP && !DOWN && !(pl.lockT > 0 || pl.throwT > 0)) { pl.ropeClimb = pl.ropeAnim = false; pl.ropeHang = pl.face; }   // postoj $2E8E2E: zawis wg $2EB222   // cios zaczety w tej klatce: bez postoju ($2E8D4E) - tryb trwa (emulator 4x, R3)
       if (rd) pl.ropeDir = rd;
     }
   }
@@ -2440,6 +2442,7 @@ function update() {
   // kierunek w locie podrzutu ($30CC59) i na spadochronie ($2EB20C) wychodzi przed zmiana stanu: stan 1 trwa (rndb14oc, rndb2oc)
   if (!pl.crouch && (H0 && !lock && !(pl.lift?.spike && !hopFloor) && !pl.chute || pl.climb || pl.crawl || pl.water || pl.jump || pl.jumpReq || onFoot && !(pl.lockT > 0 || pl.throwT > 0) && (pl.wp ?? WT0) === WT0)) pl.crouchSt = false;
   if (!pl.crouchSt || !DOWN) pl.st1Land = false;
+  if (!pl.crouchSt) pl.st1Chute = false;
   if (!pl.crouchSt || onFoot && !landing0 && !pl.lift) pl.hopSt = false; else if (pl.lift?.spike && !hopFloor) pl.hopSt = true;   // stan 1 przez lot podrzutu: czolganie po ladowaniu od nowa (6); na ziemi po klatce ladowania koniec
   // poziomo: start od razu 1 px/kl., potem +1/8 px/kl. do 2 px/kl. (emulator: 1,1,1,2,1,2,1,2,2...)
   const cur = currentAt();
@@ -2459,7 +2462,7 @@ function update() {
   pl.wp0 = pl.wp; pl.wc0 = WALK_T[pl.wt || 'norm'].c;
   if (!pl.climb) {
     // $2E9A2A: klatka zgloszenia skoku bez kierunku - bez wybiegu; DOWN w skoku albo na spadochronie ($2E9AE0 -> d7) tez,
-    let dx = pl.jumpReq && !dir || ropeJump || DOWN && !dir && !pl.water && ((pl.jump || jumpNow) && !landing0 || pl.chute) || (upDead || chuteGo || UP && pl.chute && !pl.water) && !dir || pl.atDoor && !dir ? 0 : walkDx(dir, cur && cur[4]);   // obrot do drzwi ($2E98A6, d7): bez wybiegu
+    let dx = pl.jumpReq && !dir || ropeJump || DOWN && !dir && !pl.water && ((pl.jump || jumpNow) && !landing0 || pl.chute) || (upDead || chuteGo || UP && pl.chute && !pl.water) && !dir || pl.atDoor && !dir || DOWN && !dir && pl.crawl && pl.lowCeil ? 0 : walkDx(dir, cur && cur[4]);   // obrot do drzwi ($2E98A6, d7): bez wybiegu; samo DOWN pod niskim sufitem ($2E9A42, d7) tez (emulator 4x, rndb19oc 852)
     if (pl.jumpReq && pl.wt === 'water') walkTable('norm');            // wyskok: tablica zwykla po odczycie ($2E9548)
     if (cur && cur[4]) dx = walkPush(cur[4]);
     else if (cur && pl.spin > 18) { const c = (cur[0] + cur[2]) >> 1; if (c !== pl.x) dx = c > pl.x ? 1 : -1; }   // $2F1640: do srodka pradu
@@ -2472,7 +2475,7 @@ function update() {
   if (dir || doorUp) pl.idleDone = false;           // UP przy drzwiach / kaflu akcji ($2E988C) tez zeruje $2EB224
   else if ((pl.ground || landing0 || pl.lift?.spike && !pl.jump && !pl.rope && pl.liftI < (pl.hopStart ?? 2)) && !pl.water && !pl.jumpReq && (pl.wp0 ?? pl.wc0) === pl.wc0) { pl.idleDone = true; pl.swimDir = 0; }   // postoj ($2E8E46); start podrzutu z kolcow bez skoku: postoj tez (emulator 4x, C2)   // ladowanie bez ruchu: postoj juz w tej klatce
   const x0 = pl.x;
-  let d; [d, pl.fx] = step(pl.vx, pl.fx); if (d) moveX(d);
+  let d; [d, pl.fx] = step(pl.vx, pl.fx); pl.hitNow = false; if (d) moveX(d);
   // sciana tylko przy probie ruchu ($2F4554 w ruchu nastepnej klatki): wskaznik na srodek, potem znow 0, 0, +-1 - stojac
   // przy scianie wskaznik krazy (emulator: z kucania LEFT pod sciana 39 x 3, potem 29; odejscie od sciany 0 x 1-3)
   // $2F43DC: ruch cofniety w calosci, gdy gracz bylby <= 64 albo > 352 px od kamery gry (A4 = cam.x - 48)
@@ -2606,9 +2609,11 @@ function update() {
   // powierzchni, nie na spadochronie, 20 klatek po skoku z liny, x - A4 > 68
   if (!pl.rope && !pl.water && !(pl.y > L.waterY + 2) && !pl.surf && !(pl.ropeCool > 0) && !(pl.chute && !floorAt(pl.x, pl.y + 1)) && !chuteGo && ropeAt() && pl.x - Math.round(cam.x) + 48 > 68) {
     const jr = pl.jumpReq, cr = pl.crawl, hopAir = !!pl.lift?.spike && !pl.jump && !pl.jumpScript && pl.liftI > (pl.hopStart ?? 2);   // skok zgloszony w tej klatce (np. wyskok z wody): klatka skoku (emulator 4x, I4)
-    Object.assign(pl, {rope: true, climb: true, x: (pl.x & ~15) + 7, vx: 0, vy: 0, fx: 0, fy: 0, jump: false, jumpReq: false, lift: null, liftPaused: null, liftResume: null, ropeClimb: false, ropeAnim: false, wp: null, hang: 0, crouch: false, crawl: false, anim: -1, landed: true, regrab: true, grabDrop: pl.jump || pl.jumpScript ? 0 : pl.lift?.spike ? pl.hopV : pl.vy > 0 ? Math.max(1, pl.vy / Q | 0) : 1});   // profil $2F1C20 (stop)   // w locie klatka sprzed chwytu jeszcze raz
+    Object.assign(pl, {rope: true, climb: true, ropeHang: pl.face0 ?? pl.face, x: (pl.x & ~15) + 7, vx: 0, vy: 0, fx: 0, fy: 0, jump: false, jumpReq: false, lift: null, liftPaused: null, liftResume: null, ropeClimb: false, ropeAnim: false, wp: null, hang: 0, crouch: false, crawl: false, anim: -1, landed: true, regrab: true, grabDrop: pl.jump || pl.jumpScript ? 0 : pl.lift?.spike ? pl.hopV : pl.vy > 0 ? Math.max(1, pl.vy / Q | 0) : 1});   // profil $2F1C20 (stop)   // w locie klatka sprzed chwytu jeszcze raz
     if (pl.frame === 87 || pl.frame === 88) pl.frame = pl.face > 0 ? 88 : 87;   // spadanie: zwrot z tej klatki (skrypt chwytu $2EB16C, emulator 4x, R3)
-    else if (pl.frame === 4 || pl.frame === 33) pl.frame = (pl.face0 ?? pl.face) > 0 ? 4 : 33;   // skok: zwrot sprzed kierunku tej klatki (emulator 4x, R3)
+    else if (pl.frame === 4 || pl.frame === 33) pl.frame = (pl.face0 ?? pl.face) > 0 ? 4 : 33;
+    else if (pl.stompEnd && (pl.frame === 8 || pl.frame === 37)) pl.frame = pl.face > 0 ? 4 : 33;   // koniec ciosu w dol w tej klatce: skrypt skoku (emulator 4x, rndbR4oc 2935)
+    if (pl.stomp) pl.frame = pl.face > 0 ? 8 : 37;     // cios w dol zaczety w tej klatce (FIRE przed chwytem $2F1170, emulator 4x, rndbR4oc 4356)   // skok: zwrot sprzed kierunku tej klatki (emulator 4x, R3)
     if (hopAir) pl.frame = pl.face > 0 ? 88 : 87;      // podrzut z kolcow juz w powietrzu: klatka spadania, nie ze startu (emulator 4x, rndbR4oc 855)
     if (wasGround) pl.frame = cr ? (pl.face > 0 ? ANIM.crawlR : ANIM.crawlL)[0] : RIGHT - LEFT ? (pl.face > 0 ? ANIM.walkR : ANIM.walkL)[0] : pl.face > 0 ? 0 : 29;   // z ziemi: klatka z obslugi joysticka tej klatki (emulator 4x, R3: 4 -> 10 -> 65)
     if (jr) pl.frame = pl.face > 0 ? 4 : 33;
@@ -2625,7 +2630,10 @@ function update() {
     pl.landJump = pl.jump || !!pl.jumpScript;
     if (pl.liftEnd && pl.jump && !pl.stomp) pl.jumpPose = false;   // po koncu profilu (stale +d) to dalej ladowanie z profilu
     if (crouchSt0) pl.st1Land = true;                 // stan 1 z powietrza: DOWN po ladowaniu nie ustawia skryptu kucania ($2E9C34)
+    pl.st1Chute = crouchSt0 && !!pl.chute;            // spadochron w stanie 1: po ladowaniu postoj tez bez DOWN (emulator 4x, rndb18oc 3122)
+    const wsAir = pl.wallStand;
     pl.wallStand = 0;                                    // po ladowaniu chod od nowa, sciana znow klatke pozniej (emulator: 33 -> 39 -> 29)
+    if (wsAir && wsAir === H0 && pl.hitNow && pl.y === y0) { pl.wallStand = wsAir; pl.wallHold = true; }   // zderzenie w klatce ladowania (ruch przed ladowaniem) zostaje: postoj w nastepnej (emulator 4x, rndb18oc 1000, rndbR3oc 2995)
     pl.landedAir = pl.y !== y0 && !pl.grabDrop;                             // klatka skoku/spadania zostaje jeszcze w klatce ladowania (emulator); bez ruchu w tej klatce
                                                          // (oryginal tez laduje teraz, dy = 0) - nie
     if (pl.fallB < (pl.jump ? 1 : 0) && !game.treasure) pl.dieNext = game.frame + 1;   // skok: <= 0 ($2F0D40), spadanie: < 0 ($2F0BDC) - od nastepnej klatki
@@ -2759,7 +2767,7 @@ function swimFrame(dir) {
 function animate(dir) {
   pl.wallSkip = false;
   pl.anim++; if (pl.throwT > 0) pl.throwT--;
-  const wall0 = pl.wallStand; if (dir !== pl.wallStand) pl.wallStand = 0;
+  const wall0 = pl.wallStand; if (dir !== pl.wallStand && !(pl.crawl && pl.lowCeil && pl.downPrev && !dir)) pl.wallStand = 0;   // samo DOWN pod niskim sufitem ($2E9A3C przy $2EB217) zostawia flagi chodu i skrypt (emulator 4x, rndb19oc 809)
   // sciana w czolganiu ($2E8EBC przy $9DD4): skrypt stojacy $2F18C0 bez wzgledu na kierunek ruchu - tez przy cofaniu ze
   // zwrotu, od nastepnej klatki; trwa w ruchu, az obsluga kierunku ustawi skrypt czolgania od nowa (emulator 4x, rndb15oc)
   if (pl.crawlStop === 1) pl.crawlStop = true;
@@ -2812,11 +2820,11 @@ function animate(dir) {
   else if (pl.pose > 0 && (pl.crouch || pl.crouchSt)) f = R ? 3 : 32;   // stan 1 trwa po puszczeniu DOWN do postoju: cios w kucki
   else if (pl.throwT > 0 && pl.ground) f = pl.crouch || pl.crouchSt ? (R ? 3 : 32) : (R ? 89 : 90);
   else if (pl.pose > 0) f = rope && !pl.ropeSt0 ? (R ? 67 : 66) : pl.climb && !rope ? (R ? 81 : 80) : R ? 1 : 30;   // cios z liny 66/67 ($2F1BAE), z drabiny 80/81
-  else if (pl.st1Land && (pl.ground || pl.plat || pl.liftFloor || hopG)) f = R ? 0 : 29;   // tez na starcie podrzutu z kolcow (emulator 4x, C2)
+  else if ((pl.st1Land || pl.st1Chute) && (pl.ground || pl.plat || pl.liftFloor || hopG)) f = R ? 0 : 29;   // tez na starcie podrzutu z kolcow (emulator 4x, C2)
   else if ((pl.crouch || pl.crouchSt && !dir) && (pl.ground || pl.plat || pl.liftFloor || hopG)) f = R ? 2 : 31;   // zsuniecie z krawedzi w kucki: od razu klatka spadania
   else if (rope && pl.ropeSt0 && pl.lockT > 0) f = R ? 0 : 29;   // skrypt ciosu z ziemi trwa w blokadzie
   else if (pl.climb && !rope && pl.lockT > 1) f = R ? 81 : 80;   // drabina: klatka ciosu do konca blokady (lockT maleje po animate; emulator 4x, L2)
-  else if (rope) f = pl.ropeAnim || ropeRun === 1 ? cyc((pl.ropeAnim ? pl.ropeAnimDir : pl.ropeDir) < 0 ? ANIM.ropeUp : ANIM.ropeDn, 6) : (regrab || ropeRun ? (pl.face0 ?? pl.face) > 0 : R) ? 65 : 64;   // lina: zawis 64/65 ($2F1B92)   // po puszczeniu i chwycie: chwyt ($2EB16C) w przerwaniu miedzy skryptem a zapisem zwrotu obslugi kierunku - stary zwrot (emulator 4x, R3)
+  else if (rope) f = pl.ropeAnim || ropeRun === 1 ? cyc((pl.ropeAnim ? pl.ropeAnimDir : pl.ropeDir) < 0 ? ANIM.ropeUp : ANIM.ropeDn, 6) : (regrab || ropeRun ? (pl.face0 ?? pl.face) > 0 : (pl.ropeHang || pl.face) > 0) ? 65 : 64;   // zawis: zwrot ostatniego skryptu (kierunek z DOWN / UP z poprzedniej klatki zmienia tylko $2EB222 - emulator 4x, rndbR2oc 4369)   // lina: zawis 64/65 ($2F1B92)   // po puszczeniu i chwycie: chwyt ($2EB16C) w przerwaniu miedzy skryptem a zapisem zwrotu obslugi kierunku - stary zwrot (emulator 4x, R3)
   else if (pl.climb) f = pl.vy ? cyc(pl.ladderUp ? ANIM.climb : ANIM.climbDn) : R ? 79 : 78;   // drabina: zawis 79/78
   else if (pl.water && pl.spin > 0) f = cyc(pl.face > 0 ? ANIM.spinR : ANIM.spinL, 3);   // porwany przez prad
   else if (pl.water && pl.y > L.waterY - 8) f = swimFrame(dir);
