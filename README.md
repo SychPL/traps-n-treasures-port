@@ -24,8 +24,8 @@ original authors.
   the assets in the browser from your own ADF files. Done: disk identification, music, and the four stages (tile
   banks, maps, level tables, level objects and enemies, rebuilt from the relocated main program and the stages' data
   files, all equal to the assets exported from the running game), the player, the weapons, fonts, sound effects, the
-  shop, the treasure run, GAME OVER, the title picture, the HUD panels and the island map (90 of 108 files). Still to
-  do: menu, Hall of Fame, intro, story and ending screens.
+  shop, the treasure run, GAME OVER, the title picture, the HUD panels, the island map, the ending, the menu and the
+  Hall of Fame logo (101 of 108 files). Still to do: the intro logos and the story.
 
 ## Running
 
@@ -70,7 +70,7 @@ or replace single files by hand: a file keeps working as long as it has the same
   (`work/dumps/`) are not included.
 - `extractor/` - the disk extractor (`adf.js` disks and files, `seg2.js` the game's own executable format,
   `music.js`, `tiles.js`, `levels.js` maps, `tables.js` level tables, `objects.js` level objects, `actors.js` enemies,
-  `player.js`, `weapons.js`, `hud.js` fonts and small HUD graphics, `sfx.js`, `shop.js`, `screens.js`, `map.js`, `png.js`
+  `player.js`, `weapons.js`, `hud.js` fonts and small HUD graphics, `sfx.js`, `shop.js`, `screens.js`, `map.js`, `menu.js`, `png.js`
   PNG encoder); `EXTRACTOR.md` - its design and the disk layout.
 - `RESEARCH.md` - research notes (in Polish): every rule of the original that the port implements, with the
   68000 addresses it comes from and the recording that confirmed it.
@@ -91,5 +91,5 @@ czterema krotkimi etapami testowymi (`game/assets-demo/`, generator `work/make_d
 razu. Do prawdziwej gry potrzebna jest wlasna kopia (dwie dyskietki ADF): pliki z niej zrobione wklada sie do
 `game/assets/` (te same nazwy co w demo) i silnik bierze je zamiast demo. Ekstraktor w przegladarce
 (`extractor/`) czyta wlasne pliki ADF i daje juz muzyke, cztery pelne etapy (kafle, mapy, tabele, przedmioty,
-wrogowie), gracza, bronie, czcionki, efekty dzwiekowe, sklep, bieg po skarb, GAME OVER, tytul, panele HUD i mape
-wyspy; ekrany menu, intro i zakonczenia w drodze. Notatki z badan (`RESEARCH.md`) sa po polsku. Licencja kodu i pakietu demo: MIT.
+wrogowie), gracza, bronie, czcionki, efekty dzwiekowe, sklep, bieg po skarb, GAME OVER, tytul, panele HUD, mape
+wyspy, zakonczenie i menu; intro i historia w drodze. Notatki z badan (`RESEARCH.md`) sa po polsku. Licencja kodu i pakietu demo: MIT.

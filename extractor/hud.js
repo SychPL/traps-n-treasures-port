@@ -20,6 +20,12 @@ const FONT = {at: 0x30AC49, h: 9, n: 64};
 const CHARS = {'!': 1, '"': 2, '%': 3, '&': 6, "'": 7, '(': 8, ')': 9, '*': 10, '+': 11, ',': 12, '-': 13, '.': 14, ':': 26, '?': 31};
 for (let d = 0; d < 10; d++) CHARS[d] = 16 + d;
 for (let i = 0; i < 26; i++) CHARS[String.fromCharCode(65 + i)] = 33 + i;
+// Polish letters on top of the game font (work/make_font_ext.py, our own patterns): 8x12 = 2 rows above the cell
+// (acute, dot), the 9-row cell with the base letter, 1 row below (ogonek); the cell's row 0 is cleared under an accent
+const ACUTE = ['....##..', '...##...'], DOT = ['...##...', '...##...'];
+const EXT = {'Ą': ['A', null, {8: '......#.'}, '.......#'], 'Ć': ['C', ACUTE, {}, null], 'Ę': ['E', null, {8: '....#...'}, '.....##.'],
+  'Ł': ['L', null, {3: '.####...', 4: '###.....'}, null], 'Ń': ['N', ACUTE, {}, null], 'Ó': ['O', ACUTE, {}, null],
+  'Ś': ['S', ACUTE, {}, null], 'Ź': ['Z', ACUTE, {}, null], 'Ż': ['Z', DOT, {}, null]};
 const enc = o => new TextEncoder().encode(JSON.stringify(o));
 const dims = (W, S, a) => [W(a), W(a + 2), S(a + 4), S(a + 6)];
 
@@ -35,6 +41,19 @@ export function extractHud(disks) {
       for (let x = 0; x < 8; x++) if (b >> (7 - x) & 1) fpx.fill(255, ((g >> 4) * FONT.h + y) * fw * 4 + ((g & 15) * 8 + x) * 4, ((g >> 4) * FONT.h + y) * fw * 4 + ((g & 15) * 8 + x) * 4 + 4);
     }
   out.push({path: 'font.png', data: encodePNG(fpx, fw, fh)}, {path: 'font.json', data: enc(CHARS)});
+  const ew = 8 * Object.keys(EXT).length, epx = new Uint8Array(ew * 12 * 4), dot = (x, y, on) => epx.fill(on ? 255 : 0, (y * ew + x) * 4, (y * ew + x) * 4 + 4);
+  Object.entries(EXT).forEach(([, [base, above, extra, below]], k) => {
+    const g = CHARS[base];
+    for (let y = 0; y < FONT.h; y++) {
+      const b = B(FONT.at + g * FONT.h + y);
+      for (let x = 0; x < 8; x++) dot(8 * k + x, 2 + y, b >> (7 - x) & 1 && !(above && y === 0));
+    }
+    const rows = Object.fromEntries(Object.entries(extra).map(([r, pat]) => [+r + 2, pat]));
+    if (above) Object.assign(rows, {0: above[0], 1: above[1]});
+    if (below) rows[11] = below;
+    for (const [y, pat] of Object.entries(rows)) [...pat].forEach((c, x) => { if (c === '#') dot(8 * k + x, +y, true); });
+  });
+  out.push({path: 'font_ext.png', data: encodePNG(epx, ew, 12)}, {path: 'font_ext.json', data: enc(Object.fromEntries(Object.keys(EXT).map((ch, k) => [ch, k])))});
   // message box frame: item bank + $2218; message font: 93 BOBs of the font bank + the 2 'next' arrows at +$1DC6
   const box = L(0x30CD58) + 0x2218, [bw, bh] = dims(W, S, box), bpx = new Uint8Array(bw * bh * 4);
   bob(mem.chip, box, surf1, bpx, bw, 0, 0);

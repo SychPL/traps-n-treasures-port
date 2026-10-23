@@ -40,6 +40,7 @@ import { extractSfx } from './sfx.js';
 import { extractShop } from './shop.js';
 import { extractScreens } from './screens.js';
 import { extractMap } from './map.js';
+import { extractMenu } from './menu.js';
 
 const CACHE = 'tnt-assets-v1';
 const log = s => { document.getElementById('log').textContent += s + '\n'; };
@@ -61,7 +62,7 @@ export async function extractAll(files) {
   const out = [], t0 = performance.now();
   // tiles, maps, level tables, objects and actors only work together (tile numbers, attributes, areas, types): one
   // module fails, none is stored
-  for (const [name, run] of [['music', extractMusic], ['sfx', extractSfx], ['player', extractPlayer], ['weapons', extractWeapons], ['hud', extractHud], ['shop', extractShop], ['screens', extractScreens], ['map', extractMap], ['stages', d => d[1] && d[2] ? [extractTiles, extractMaps, extractLevels, extractObjects, extractActors].flatMap(f => f(d)) : []]]) {
+  for (const [name, run] of [['music', extractMusic], ['sfx', extractSfx], ['player', extractPlayer], ['weapons', extractWeapons], ['hud', extractHud], ['shop', extractShop], ['screens', extractScreens], ['map', extractMap], ['menu', extractMenu], ['stages', d => d[1] && d[2] ? [extractTiles, extractMaps, extractLevels, extractObjects, extractActors].flatMap(f => f(d)) : []]]) {
     try { const r = run(disks); out.push(...r); log(`${name}: ${r.length} files`); }
     catch (e) { log(`${name}: ${e.message}`); }
   }

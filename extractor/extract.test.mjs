@@ -17,6 +17,7 @@ import { extractSfx } from './sfx.js';
 import { extractShop } from './shop.js';
 import { extractScreens } from './screens.js';
 import { extractMap } from './map.js';
+import { extractMenu } from './menu.js';
 
 const adf = n => new Uint8Array(readFileSync(`Traps-n-Treasures_Amiga_EN/Traps 'n Treasures (1993)(Starbyte)(En)[cr PSG](Disk ${n} of 2).adf`));
 const disks = {1: adf(1), 2: adf(2)};
@@ -123,4 +124,5 @@ check(extractSfx(disks));
 check(extractShop(disks));
 check(extractScreens(disks));
 check(extractMap(disks));
+check(extractMenu(disks));
 if (bad) { console.log(`${bad} mismatches`); process.exit(1); }

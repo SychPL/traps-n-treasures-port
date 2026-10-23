@@ -39,11 +39,16 @@ Done in `extractor/`, each checked against your own exported `game/assets/` by `
 - the HUD panels (`hud.js`, disk 2 `$A0824` + life fields, vitamin source and map box drawn as the game draws them) and
   the island map (`map.js`, palette = the fade-in target `$2F3B70`; the export's screenshot-fitted palette was taken
   mid-fade, now fixed).
+- the ending (`screens.js`: picture disk 2 `$C21E4` with the copper palettes and sky gradient its segment writes, text
+  and the 3 missing glyphs from the segment's own font; the export's screenshot cuts are replaced by this render) and
+  the Polish letters `font_ext` (`hud.js`, our patterns from `work/make_font_ext.py` on the game font).
+- the menu and the Hall of Fame logo (`menu.js`: BOB banks disk 2 PP `$9C6BC` and `$96AA8`, palette `$30C4B2`, positions
+  fitted pixel for pixel to the screenshots; the screenshot cuts are replaced by this composition).
 
 The page stores the music and, when both disks are given, the stages (tiles, maps, tables) in Cache Storage;
 `game/sw.js` serves them to the game in place of the demo pack (tested: the 4 original stages with the demo pack's
 graphics pass the 4000-frame random-input test). The player is a group of its own (disk 2 only). Still to do:
-menu, Hall of Fame, intro, story, ending, and the derived files (`font_ext`, `story_text_pl`, `title_wide`).
+the intro logos, the story, and the derived files `story_text_pl`, `title_wide`.
 
 ## Verdict
 

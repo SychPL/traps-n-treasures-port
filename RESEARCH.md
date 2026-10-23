@@ -1508,3 +1508,20 @@ zgoda prawowitych właścicieli.
   takty, 16 krokow. Paleta dopasowana do zrzutu byla w trakcie rozjasniania (jasne kolory obciete do $A: plaze, zamek,
   fale za ciemne); `export_screens.py` czyta tablice z programu, island_clean / map_actors / map_marker wyeksportowane od
   nowa. Ekstraktor (`extractor/map.js`) = eksport; w oknie skryptow mapy 2 B stanu ze zrzutu.
+- Ekstraktor, zakonczenie (`extractor/screens.js`): obraz z dysku 2 (PP $C21E4, 320x256, 5 planow; 6. plan to
+  przewijany tekst), kolory jak w kodzie segmentu zakonczenia $438: 32 kolory z seg1 +$6E0 do listy coppera (seg2 +$96),
+  30 kolorow morza z +$720 od linii 202 (seg2 +$632), gradient koloru 27 nieba z tablicy +$111C wzorem t[k], t[k+1], t[k]
+  ($4CE). Render 243 linii od linii 44 zgadza sie z ujeciem emulatora w kolorach 4-bit poza zaokraglonymi rogami ekranu
+  emulatora i linia horyzontu 158 (copper zmienia palete w trakcie linii). Brakujace glify ('<' '>' '@') to wlasna
+  czcionka segmentu (seg1 +$F08, ASCII od 32, 9 B). ending_bg / ending_dark / ending_sky zastapione renderem z dysku
+  (stare: wyciete ze zrzutu, surowe kolory 8-bit vAmiga, latane rogi); ending.json bez zmian.
+- Ekstraktor, polskie litery (`extractor/hud.js`): wzory `work/make_font_ext.py` (nasze) nakladane na glify czcionki gry
+  z dysku - font_ext.png/json piksel w piksel.
+- Ekstraktor, menu i logo Hall of Fame (`extractor/menu.js`): modul $309DF0 laduje bank BOB-ow dysku 2 (PP $9C6BC: zwoj z
+  logo 205x57, medalion z kapitanem 120x119, wstega START/PASSWORD 284x42, rzad pol hasla 160x19, podswietlenie PASSWORD
+  65x23, ramka kursora 20x20) i bank obrazkow hasla ($96AA8, 6 nieprzezroczystych BOB-ow 16x16); paleta 32 kolorow z
+  $30C4B2 ($30A3FA kopiuje ja do coppera $E4F6). Polozenia sprawdzone piksel w piksel na ujeciach: logo 58,1, medalion
+  100,41, wstega 18,158, podswietlenie 130,173, pola 81,174 co 20 px, obrazek w polu +2,+2, ramka kursora +0,+0.
+  menu.png, menu_icons.png, pass_icons.png i hof_logo.png zastapione wersja z dysku (kolory x17 zamiast surowych 8-bit
+  vAmiga; logo to caly BOB 205x57 z ciemnym konturem, wyciecie ze zrzutu gubilo ciemne piksele i 2 ostatnie wiersze).
+  Hasla z tablicy $30C438.

@@ -1,6 +1,8 @@
 // Screens and runs outside the stages: treasure.png/json (work/export_treasure.py), gameover.png
-// (work/export_gameover.py) and title.png (the title picture as the emulator showed it).
+// (work/export_gameover.py), title.png (the title picture as the emulator showed it) and the ending
+// (ending_bg.png, ending_dark.png, ending_sky.png, ending.json; the export cut them from emulator screenshots).
 import { readFile } from './adf.js';
+import { loadSeg2 } from './seg2.js';
 import { encodePNG } from './png.js';
 import { stageMemory, reader, levelJSON } from './tables.js';
 import { bob, stagePalettes } from './objects.js';
@@ -16,6 +18,15 @@ const WALL = 0x97EFC, GO_BANK = [0x96F0C, 0xFEC];
 // title: disk 1 PP $CC20, 352 x 290, 6 planes one after another (44 B a line), extra half-bright; 289 lines shown;
 // palette = 32 colours in the boot module (disk 1 $646E = SEG2 $3214 +$325A), the same on every line
 const TITLE = {at: 0xCC20, pal: 0x646E, w: 352, h: 289, lines: 290};
+// ending: SEG2 on disk 2 at $BC098 ($6148 B); picture disk 2 PP $C21E4, 320 x 256, 5 planes (the 6th plane is the
+// scrolling text); $438 writes 32 colours from seg1 +$6E0 to its copper list (seg2 +$96), 30 colours from +$720 for the
+// sea (seg2 +$632, from line 202) and the sky gradient of colour 27 (table +$111C as t[k], t[k+1], t[k] on the lines
+// from seg2 +$122 to +$62C). Shown: 243 lines from line 44. Sky = lines 0-158 where the pixel has the line's colour.
+// Text: zero-terminated strings from ' CONGRATULATIONS' to the panel end mark $02; the glyphs the game font lacks
+// ('<' '>' '@') come from the ending's own font (seg1 +$F08, ASCII from 32, 9 B a glyph: the code reads from $F12 +
+// (ASCII - $21) x 9, i.e. one byte later; starting a byte early gives the 9-row cell as the screen shows it, with the
+// empty row above, on the same line as the game font's letters).
+const END = {at: 0xBC098, len: 0x6148, pic: 0xC21E4, h: 243, line0: 44, sky: 159, font: 0xF08};
 
 export function extractScreens(disks) {
   if (!disks[1] || !disks[2]) return [];
@@ -61,5 +72,55 @@ export function extractScreens(disks) {
       ppx[k] = (v >> 8 & 15) * 17 / f | 0; ppx[k + 1] = (v >> 4 & 15) * 17 / f | 0; ppx[k + 2] = (v & 15) * 17 / f | 0; ppx[k + 3] = 255;
     }
   out.push({path: 'title.png', data: encodePNG(ppx, TITLE.w, TITLE.h)});
+  out.push(...ending(disks));
   return out;
+}
+
+function ending(disks) {
+  const seg = loadSeg2(disks[2], END.at, [0, 0x10000, 0x20000]), s1 = new DataView(seg.seg1.buffer);
+  const cop = seg.seg2.slice(), cv = new DataView(cop.buffer), W1 = a => s1.getUint16(a);
+  for (let i = 0; i < 32; i++) cv.setUint16(0x96 + 4 * i, W1(0x6E0 + 2 * i));
+  for (let i = 0; i < 30; i++) cv.setUint16(0x632 + 4 * i, W1(0x720 + 2 * i));
+  for (let a0 = 0x122, a1 = 0x111C; ;) {                // as $4CE: d0, d1, d0 on every 8th byte, then the next pair
+    const d0 = W1(a1), d1 = W1(a1 + 2);
+    if (a0 >= 0x62C) break; cv.setUint16(a0, d0); a0 += 8;
+    if (a0 >= 0x62C) break; cv.setUint16(a0, d1); a0 += 8;
+    cv.setUint16(a0, d0); a0 += 8;
+    if (a0 >= 0x62C) break; a1 += 2;
+  }
+  const pal = new Array(32).fill(0), lines = [];        // palette of each screen line (moves apply from the next wait)
+  let line = 0;
+  for (let a = 0; a + 4 <= cop.length; a += 4) {
+    const r = cv.getUint16(a), v = cv.getUint16(a + 2);
+    if (r === 0xFFFF && v === 0xFFFE) break;
+    if (r & 1) { for (; line < r >> 8; line++) lines[line] = pal.slice(); continue; }
+    if (r >= 0x180 && r <= 0x1BE) pal[(r - 0x180) / 2] = v;
+  }
+  const pic = readFile(disks[2], END.pic), bg = new Uint8Array(320 * END.h * 4), dark = bg.slice(), sky = bg.slice();
+  const col = new Uint16Array(320 * END.h);
+  for (let y = 0; y < END.h; y++) {
+    const p = lines[END.line0 + y] || pal;
+    for (let x = 0; x < 320; x++) {
+      let c = 0;
+      for (let q = 0; q < 5; q++) c |= (pic[q * 40 * 256 + y * 40 + (x >> 3)] >> (7 - (x & 7)) & 1) << q;
+      const v = col[y * 320 + x] = p[c], k = (y * 320 + x) * 4;
+      bg[k] = (v >> 8 & 15) * 17; bg[k + 1] = (v >> 4 & 15) * 17; bg[k + 2] = (v & 15) * 17; bg[k + 3] = 255;
+      dark[k] = (v >> 9 & 7) * 17; dark[k + 1] = (v >> 5 & 7) * 17; dark[k + 2] = (v >> 1 & 7) * 17; dark[k + 3] = 255;   // half-bright
+    }
+    if (y < END.sky) {
+      const n = new Map();
+      for (let x = 14; x < 306; x++) n.set(col[y * 320 + x], (n.get(col[y * 320 + x]) || 0) + 1);
+      const mode = [...n].reduce((a, b) => b[1] > a[1] ? b : a)[0];
+      for (let x = 0; x < 320; x++) if (col[y * 320 + x] === mode) sky.fill(255, (y * 320 + x) * 4, (y * 320 + x) * 4 + 4);
+    }
+  }
+  const raw = disks[2].subarray(END.at, END.at + END.len), txt = String.fromCharCode(...raw);
+  const a = txt.indexOf(' CONGRATULATIONS'), b = txt.indexOf('\x02', a);
+  const glyphs = Object.fromEntries(['<', '>', '@'].map(ch => [ch, [...Array(9)].map((_, r) => {
+    const v = seg.seg1[END.font + (ch.charCodeAt(0) - 32) * 9 + r];
+    return [...Array(8)].map((_, c) => v >> (7 - c) & 1 ? '#' : '.').join('');
+  })]));
+  return [{path: 'ending_bg.png', data: encodePNG(bg, 320, END.h)}, {path: 'ending_dark.png', data: encodePNG(dark, 320, END.h)},
+    {path: 'ending_sky.png', data: encodePNG(sky, 320, END.h)},
+    {path: 'ending.json', data: enc({lines: txt.slice(a, b + 1).split('\x00'), glyphs})}];
 }
