@@ -10,8 +10,21 @@ joystick input.
 the original program and the program itself remain the property of their rights holders and are not
 included. The repository ships a small **demo pack** instead: our own graphics and test stages drawn by a
 script, so the engine runs out of the box. To play the real game you need your own copy (two ADF disk
-images): the extractor page builds every asset from them in your browser (see below). This project is not
+images): the game builds every asset from them in your browser (see the quick start). This project is not
 affiliated with Starbyte or the original authors.
+
+## Quick start
+
+1. Download this repository (**Code -> Download ZIP**) and unpack it.
+2. **Windows:** double-click `start.bat` (nothing to install - a small PowerShell web server, `serve.ps1`).
+   **macOS / Linux:** run `./start.sh` (uses `node` or `python3`). The browser opens the game with its demo pack.
+3. To play the original game, click **Load ADF disks** in the bar at the top of the game page (or drop the files on
+   the page) and pick both disk images of your own copy (the PSG release). The game files are built in your browser
+   (up to a minute), then the page reloads with the original game. Nothing is uploaded; the files stay in the
+   browser's storage until you remove them on the extractor page.
+
+Command line instead: `node extractor/extract.mjs <folder with the two ADF files>` (Node 20+) writes the 107 files to
+`game/assets/`, which the game reads before the demo pack.
 
 ## Status
 
@@ -31,20 +44,21 @@ affiliated with Starbyte or the original authors.
 
 ## Running
 
-The game is static files. Serve the repository root over HTTP (for example `start-server.bat`, which runs
-`python work/oracle_server.py 8435`) and open `http://127.0.0.1:8435/game/`.
+The game is static files served over HTTP (not `file://`): `start.bat` / `start.sh` above, `node serve.mjs`, or any
+static web server in the repository root; then open `http://127.0.0.1:8435/game/`. `start-server.bat` runs the
+development server `work/oracle_server.py` (Python) that the emulator tools need.
 
 The engine looks for `game/assets/` first and falls back to the demo pack in `game/assets-demo/` when it is
 missing (`?assets=demo` forces the demo pack). `?level=1..4` starts a stage directly.
 
 ## Playing the original game
 
-Open `http://127.0.0.1:8435/extractor/`, pick both ADF files of your own copy (the PSG release), wait a few
-seconds, then "Start the game". The disks are identified by a hash of their game-data range, the files are
-unpacked (PowerPacker port in `extractor/ppdepack.js`) and the results are stored in the browser's Cache
-Storage; `game/sw.js` (a service worker) serves them to the game in place of the demo pack. Nothing is uploaded.
-"Remove extracted files" on the same page goes back to the demo pack. The service worker needs http(s) (not
-`file://`); `crypto.subtle` needs https or `http://localhost` / `127.0.0.1`.
+Load the disks on the game page (quick start above) or on `http://127.0.0.1:8435/extractor/`. The disks are
+identified by a hash of their game-data range, the files are unpacked (PowerPacker port in `extractor/ppdepack.js`)
+and the results are stored in the browser's Cache Storage; `game/sw.js` (a service worker) serves them to the game in
+place of the demo pack, and without a service worker (private windows, some embedded browsers) the engine reads
+them from Cache Storage itself. "Remove extracted files" on the extractor page goes back to the demo pack.
+`crypto.subtle` needs https or `http://localhost` / `127.0.0.1`.
 
 Other ways and tools:
 
@@ -93,7 +107,11 @@ Wierna przegladarkowa wersja amigowej gry Traps 'n Treasures (Starbyte, 1993), n
 na podstawie analizy kodu 68000 i sprawdzana klatka po klatce z emulatorem. Repozytorium nie zawiera danych
 oryginalnej gry (grafiki, map, muzyki, tekstow programu). Zamiast nich jest pakiet demo z wlasna grafika i
 czterema krotkimi etapami testowymi (`game/assets-demo/`, generator `work/make_demo_assets.py`) - gra rusza od
-razu. Do prawdziwej gry potrzebna jest wlasna kopia (dwie dyskietki ADF): pliki z niej zrobione wklada sie do
-`game/assets/` (te same nazwy co w demo) i silnik bierze je zamiast demo. Ekstraktor w przegladarce
-(`extractor/`) czyta wlasne pliki ADF (dwie dyskietki) i sklada z nich wszystkie pliki, ktorych gra potrzebuje -
-wystarczy otworzyc `extractor/`, wybrac oba pliki i uruchomic gre. Notatki z badan (`RESEARCH.md`) sa po polsku. Licencja kodu i pakietu demo: MIT.
+razu.
+
+Szybki start: pobierz repozytorium (Code -> Download ZIP), rozpakuj i uruchom `start.bat` (Windows, nic nie trzeba
+instalowac) albo `./start.sh` (macOS / Linux, node albo python3). Przegladarka otworzy gre z pakietem demo. Zeby
+zagrac w oryginal, kliknij u gory strony gry **Wczytaj dyskietki ADF** (albo upusc pliki na strone) i wybierz obie
+dyskietki ze swojej kopii (wersja PSG) - pliki gry skladaja sie w przegladarce (do minuty), strona sie przeladuje z
+oryginalna gra. Nic nie jest wysylane. Z linii polecen: `node extractor/extract.mjs <folder z dyskietkami>` zapisuje
+pliki do `game/assets/`. Notatki z badan (`RESEARCH.md`) sa po polsku. Licencja kodu i pakietu demo: MIT.

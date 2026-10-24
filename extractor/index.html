@@ -26,52 +26,20 @@
   <canvas id="tiles" width="256" height="16" hidden></canvas>
 </main>
 <script type="module">
-import { identify } from './adf.js';
-import { extractMusic } from './music.js';
-import { extractTiles } from './tiles.js';
-import { extractMaps } from './levels.js';
-import { extractLevels } from './tables.js';
-import { extractObjects } from './objects.js';
-import { extractPlayer } from './player.js';
-import { extractWeapons } from './weapons.js';
-import { extractActors } from './actors.js';
-import { extractHud } from './hud.js';
-import { extractSfx } from './sfx.js';
-import { extractShop } from './shop.js';
-import { extractScreens } from './screens.js';
-import { extractMap } from './map.js';
-import { extractMenu } from './menu.js';
-import { extractIntro } from './intro.js';
+import { readDisks, extractFrom, storeInCache, CACHE } from './extract.js';
 
-const CACHE = 'tnt-assets-v1';
 const log = s => { document.getElementById('log').textContent += s + '\n'; };
-const TYPES = {png: 'image/png', json: 'application/json', med: 'application/octet-stream', bin: 'application/octet-stream'};
-const assetURL = path => new URL('../game/assets/' + path, location.href).href;
+const assetsURL = new URL('../game/assets/', location.href).href;
 
 // the game page registers it too; registering here makes the very next game start use the extracted files
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('../game/sw.js', {scope: '../game/'}).catch(e => log('service worker: ' + e.message));
 
 // files: File[] (or {name, arrayBuffer()}) -> number of stored assets
 export async function extractAll(files) {
-  if (!crypto.subtle) throw new Error('crypto.subtle is missing: open this page over https or http://localhost');
-  const disks = {};
-  for (const f of files) {
-    const adf = new Uint8Array(await f.arrayBuffer()), d = await identify(adf);
-    log(`${f.name}: ${d ? 'recognised as ' + d.name : 'unknown disk (only the PSG release is supported)'}`);
-    if (d) disks[d.id] = adf;
-  }
-  const out = [], t0 = performance.now();
-  // tiles, maps, level tables, objects and actors only work together (tile numbers, attributes, areas, types): one
-  // module fails, none is stored
-  for (const [name, run] of [['music', extractMusic], ['sfx', extractSfx], ['player', extractPlayer], ['weapons', extractWeapons], ['hud', extractHud], ['shop', extractShop], ['screens', extractScreens], ['map', extractMap], ['menu', extractMenu], ['intro', extractIntro], ['stages', d => d[1] && d[2] ? [extractTiles, extractMaps, extractLevels, extractObjects, extractActors].flatMap(f => f(d)) : []]]) {
-    try { const r = run(disks); out.push(...r); log(`${name}: ${r.length} files`); }
-    catch (e) { log(`${name}: ${e.message}`); }
-  }
+  const disks = await readDisks(await Promise.all([...files].map(async f => ({name: f.name, data: new Uint8Array(await f.arrayBuffer())}))), log);
+  const t0 = performance.now(), out = extractFrom(disks, log);
   if (!out.length) { log('nothing extracted - the files stored before are kept'); return 0; }
-  await caches.delete(CACHE);                        // every extraction is one complete set, nothing left from an older one
-  const cache = await caches.open(CACHE);
-  for (const {path, data} of out)
-    await cache.put(assetURL(path), new Response(data, {headers: {'Content-Type': TYPES[path.split('.').pop()] || 'application/octet-stream'}}));
+  await storeInCache(out, assetsURL);
   log(`stored ${out.length} files in ${((performance.now() - t0) / 1000).toFixed(1)} s - start the game to use them`);
   return out.length;
 }

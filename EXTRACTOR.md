@@ -3,6 +3,19 @@
 Feasibility audit and plan (2026-10-19). Goal: publish `game/` without any original data. The player picks
 their own ADF disks in a form and every asset is extracted in the browser.
 
+## Using it (2026-10-24)
+
+Three ways, all running the same modules (`extract.js` runs every module and stores or writes the result):
+
+- on the game page: `start.bat` (Windows, PowerShell server `serve.ps1`, nothing to install) or `start.sh` (node
+  `serve.mjs` or `python3 -m http.server`) opens `http://127.0.0.1:8435/game/`; on the demo pack a bar at the top offers
+  "Load ADF disks" (or dropping the files on the page). `game/disks.js` builds the files in the browser (up to a minute),
+  stores them in Cache Storage and reloads. `game/sw.js` serves them in place of the demo pack; a browser without a
+  service worker (private window, embedded views) gets them from Cache Storage as blob URLs (`BLOBS` in `main.js`);
+- the extractor page `extractor/` (the same, with a log and "Remove extracted files");
+- the command line: `node extractor/extract.mjs <folder with the ADF files>` (or the two files) writes the 107 files to
+  `game/assets/`, which the game reads before the demo pack (also for packaging, e.g. the Android app).
+
 ## Status (2026-10-23)
 
 Done in `extractor/`, each checked against your own exported `game/assets/` by `node extractor/extract.test.mjs`:

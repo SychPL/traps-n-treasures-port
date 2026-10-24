@@ -45,7 +45,8 @@ window.RND = {rnd1_emu: [1, 101, 1500], rnd2_emu: [2, 202, 2000], rnd3_emu: [3, 
   rndb9oc_emu: [1, 100021, 5000], rndb10oc_emu: [2, 100022, 5000], rndb11oc_emu: [3, 100023, 5000, [[41, 7, 46]]], rndb12oc_emu: [4, 100024, 5000],
   rndb13oc_emu: [1, 100031, 5000], rndb14oc_emu: [2, 100032, 5000], rndb15oc_emu: [3, 100033, 5000], rndb16oc_emu: [4, 100034, 5000],
   rndb17oc_emu: [1, 100041, 5000], rndb18oc_emu: [2, 100042, 5000], rndb19oc_emu: [3, 100043, 5000, [[42, 6, 46], [41, 6, 46]]], rndb20oc_emu: [4, 100044, 5000],
-  rndb21oc_emu: [1, 100051, 5000], rndb22oc_emu: [2, 100052, 5000], rndb23oc_emu: [3, 100053, 5000], rndb24oc_emu: [4, 100054, 5000]};
+  rndb21oc_emu: [1, 100051, 5000], rndb22oc_emu: [2, 100052, 5000, [[40, 6, 48]]], rndb23oc_emu: [3, 100053, 5000], rndb24oc_emu: [4, 100054, 5000],
+  rndb25oc_emu: [1, 100061, 5000], rndb26oc_emu: [2, 100062, 5000], rndb27oc_emu: [3, 100063, 5000, [[42, 6, 46], [41, 6, 46]]], rndb28oc_emu: [4, 100064, 5000]};
 // odrodzenie w nagraniu 4x: etap wczytuje sie w 41-42 klatki od FIRE (A500: 61-62), obiekt gracza zerowany 6-7 klatek
 // przed polozeniem, sterowanie 46 klatek po odrodzeniu (A500: 63) - rozrzut 1 klatki; RND [3]: czas dla kazdej smierci albo
 // lista [czas, klatki 0, postoj] na kolejne smierci (fitRespawn), dalej 42 / 6 / 46
@@ -81,11 +82,16 @@ window.cmpRnd = async (name, ctx = 6, from = 0) => {   // from: pomin roznice pr
   setRespawn(name);
   const [lvl, seed, total] = RND[name], [frame0, phase] = SNAPPH[LVLSNAP[lvl]], S = Object.assign(rndSeq(seed, total), {invuln: true, frame0, phase});
   const E = await (await fetch('/work/dumps/' + name + '.json', {cache: 'no-store'})).json();
-  const src = runSeq.toString().replace("tr.push([Math.round(cam.x) - 48, Math.round(cam.y) - 48, pl.x, pl.y]);", "tr.push([Math.round(cam.x) - 48, Math.round(cam.y) - 48, pl.x, pl.y, pl.frame]);");
+  const src = runSeq.toString().replace("tr.push([Math.round(cam.x) - 48, Math.round(cam.y) - 48, pl.x, pl.y]);", "tr.push([Math.round(cam.x) - 48, Math.round(cam.y) - 48, pl.x, pl.y, pl.frame, game.carry ? 1 : 0, pl.climb ? 1 : 0]);");
   const P = await eval('(' + src + ')')(lvl, S);
   let first = -1, d = 0, fd = 0, ff = -1;
+  // obsluga joysticka dziala w emulatorze w klatce wcisniecia, ruch dopiero w nastepnej - w porcie razem z ruchem, klatke
+  // pozniej (RESEARCH.md: roznica strukturalna): chwyt drabiny z ziemi (x na srodek kafla, $2E9B80) i odstawienie skrzyni
+  // (kafel przed graczem zatrzymuje chod tej klatki, rndb3oc 4712) - x rowne w nastepnej klatce, pomijane
+  const snap = i => E[i + 1][2] !== P[i][2] && E[i + 1][2] === P[i + 1]?.[2] && E[i + 1][3] === P[i][3] && E[i + 1][0] === P[i][0] && E[i + 1][1] === P[i][1] &&
+    (!P[i][6] && P[i + 1][6] && (E[i + 1][2] & 15) === 7 || P[i][5] && !P[i + 1][5]);
   for (let i = from; i + 1 < E.length && i < P.length; i++) {
-    if (E[i + 1].slice(0, 4).join() !== P[i].slice(0, 4).join()) { d++; if (first < 0) first = i; }
+    if (E[i + 1].slice(0, 4).join() !== P[i].slice(0, 4).join() && !snap(i)) { d++; if (first < 0) first = i; }
     if (E[i][4] !== P[i][4]) { fd++; if (ff < 0) ff = i; }
   }
   const segAt = f => { let acc = 0, k = 0; for (const [n] of S) { if (acc + n > f) break; acc += n; k++; } return `${f}: seg ${k} od ${acc} ${JSON.stringify(S.slice(Math.max(0, k - 2), k + 1))}`; };

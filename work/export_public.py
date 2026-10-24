@@ -12,7 +12,8 @@ names = [n for n in names.decode('utf-8').split('\0') if n]
 ALLOW = [r'game/[^/]+\.js', r'game/index\.html', r'game/lang/[^/]+\.json', r'game/assets-demo/(?:[^/]+/)*[^/]+',
          r'game/lib/chiptune3/(?:LICENSE|chiptune3\.js|chiptune3\.worklet\.js|libopenmpt\.worklet\.js)',
          r'work/[^/]+\.(?:py|js)', r'work/sweep_path_lvl1\.json', r'work/upscale/[^/]+\.(?:py|md|patch)',
-         r'RESEARCH\.md', r'EXTRACTOR\.md', r'extractor/[^/]+\.(?:html|js|mjs|json)', r'play\.html', r'start-server\.bat']
+         r'RESEARCH\.md', r'EXTRACTOR\.md', r'extractor/[^/]+\.(?:html|js|mjs|json)', r'play\.html', r'start-server\.bat',
+         r'start\.bat', r'start\.sh', r'serve\.ps1', r'serve\.mjs']
 DENY = {'work/_game.js', 'work/levels_block.js', 'work/gen_levels.py'}   # game texts / old remake levels
 DATA = re.compile(r'\.(?:adf|ipf|zip|bin|hunk|mmd0|txt)$', re.I)       # never, whatever the allow-list says (except
 DEMO = 'game/assets-demo/'                                               # the demo pack: our own, made by make_demo_assets.py)

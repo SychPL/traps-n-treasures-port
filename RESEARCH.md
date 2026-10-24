@@ -1640,3 +1640,30 @@ zgoda prawowitych właścicieli.
 - Spadochron w stanie 1 na kolce z UP (rndb18oc 3122): po ladowaniu postoj 0 / 29, choc bez DOWN (st1Land wymaga DOWN)
   - pl.st1Chute do konca stanu 1. rndb19oc: odrodzenie po drugiej smierci klatke wczesniej (RND [41, 6, 46]); wszystkie
   cztery nowe nagrania zgodne w calosci.
+- Zapas upadku w podrzucie z kolcow (rndb22oc 3552, sonda $30CC4C / $30CC28 / $30CC59): w locie podrzutu dziala tez
+  procedura spadania $2F0B22 - na pierwszej klatce poza podloga (flaga $30CC59 zgaszona) zapas $80, predkosc $30CC28 = 1
+  z opoznieniem $30CC2A = 6, potem +1 co 3 klatki do 4. Zapas maleje o dy profilu ($2F4968) i o te predkosc
+  ($2F0BD0), takze po koncu profilu (+4 i 4 = 8 na klatke); ladowanie (tez na kolcach - sonda podlogi $2F0BDC) z
+  ujemnym zapasem zabija ($30CC77). Wartosci co do jednostki (-42 w 3550). Skok ($30CC54) liczy zapas swoja procedura
+  ($2F0D16) - podrzut zamieniony w skok konczy ten stan (inaczej R3: smierc w skoku z liny nad kolcami). Port:
+  pl.hopFall.
+- Koniec spadochronu na krawedzi (rndb22oc 283): spadochron otwarty w klatce ladowania konczy sie w nastepnej
+  ($2F0F18) z tablica zwykla od predkosci z wodnej - tez gdy pod srodkiem gracza nie ma kafla podlogi (stopy na
+  krawedzi), wczesniej port zostawal klatke dluzej na tablicy wodnej (-1 px).
+- Latwe uruchomienie (EXTRACTOR.md): start.bat (serwer PowerShell serve.ps1, bez instalacji), start.sh / serve.mjs,
+  pasek "Wczytaj dyskietki ADF" w grze na pakiecie demo (game/disks.js, extractor/extract.js), bez service workera
+  pliki z Cache Storage jako blob (BLOBS w main.js), extractor/extract.mjs z linii polecen (tylko komplet 107 plikow).
+- UP przy drzwiach (rndb23oc 3752: spadochron na drzwi z trzymanym UP, potem UP+RIGHT): sciezka UP przy drzwiach
+  ($2E988C, d7 = 1) omija krok wskaznika chodu do srodka ($2E8D14) jak samo DOWN pod niskim sufitem - wskaznik zostaje
+  po tablicy wodnej spadochronu i chod rusza 2 klatki pozniej. rndb23oc zgodne w calosci; rndb22oc co do klatki
+  (smierc w locie podrzutu: odrodzenie 2 klatki wczesniej, sterowanie po 48 klatkach - RND [40, 6, 48]).
+- Cios w klatce chwytu drabiny (rndb26oc 536: UP+FIRE przy drabinie): skrypt ciosu z ziemi (poza 1 / 30, nie 80 / 81
+  z drabiny), po nim skrypt postoju 0 / 29 do pierwszego kierunku po koncu blokady $30CC63 (albo ruchu po drabinie);
+  podciagniecie w klatce chwytu tego nie konczy. Port: pl.climbAtk0.
+- Zejscie ze szczytu drabiny z trzymanym UP (bez skoku, $2E96B4): w tej klatce skrypt postoju 0 / 29, chod z kierunkiem
+  od nastepnej (rndb26oc 978). Port: pl.climbOff. rndb26oc zgodne w calosci.
+- Obsluga joysticka w klatce wcisniecia, ruch w nastepnej: chwyt drabiny z ziemi (x na srodek kafla) i odstawienie
+  skrzyni (kafel przed graczem zatrzymuje juz chod tej klatki - rndb3oc 4712) sa w emulatorze klatke wczesniej niz
+  w porcie (roznica strukturalna, pomijana w cmpRnd tylko przy chwycie drabiny / odstawieniu skrzyni w porcie w
+  nastepnej klatce). rndb3oc, rndb6oc i rndb22oc zgodne w calosci, rndb27oc tez (druga smierc: odrodzenie 41 klatek -
+  RND [[42, 6, 46], [41, 6, 46]]).

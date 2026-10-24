@@ -9,6 +9,10 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: none; overflow: hidden }
   canvas { image-rendering: pixelated; background: #000; cursor: grab }
   #info { margin-top: 8px; text-align: center }
+  #disks { position: fixed; left: 50%; top: 8px; transform: translateX(-50%); max-width: calc(100% - 32px); box-sizing: border-box;
+    background: #1a2030ee; color: #d8dde8; border: 1px solid #4a5a80; border-radius: 6px; padding: 6px 10px; text-align: center; z-index: 9 }
+  #disks b { display: inline-block; color: #e8c832; background: #2a3450; border: 1px solid #4a5a80; border-radius: 4px; padding: 3px 10px; margin: 4px; cursor: pointer; font-weight: normal }
+  #disks i { color: #7f8ca6 } #disks a { color: #7f8ca6; text-decoration: none; margin-left: 8px } #disks.drop { border-color: #e8c832 }
 </style>
 </head>
 <body>
@@ -22,5 +26,6 @@
 <script src="touch.js"></script>
 <script src="main.js"></script>
 <script src="input.js"></script>
+<script src="disks.js"></script>
 </body>
 </html>
